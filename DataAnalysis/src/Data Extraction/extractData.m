@@ -1,4 +1,4 @@
-function header = extractData4(Folder, ImageData)
+function header = extractData(Folder, ImageData)
 
 % header = extractData3(Folder)
 %   Takes experiment folder and outputs analysed image data
