@@ -1,0 +1,12 @@
+YMAX = 20*median(AnalysedData.dFF0(n,:));
+bar(StimulusData.Times,YMAX/5*StimulusData.Raw(:,3)/max(StimulusData.Raw(:,3)),0.05);
+hold on;
+bar(StimulusData.Times,-YMAX/5*StimulusData.Raw(:,3)/max(StimulusData.Raw(:,3)),0.05,'r');
+plot(AnalysedData.Times(n,:),AnalysedData.dFF0(n,:));
+hold off;
+xlabel('Time');
+ylabel('dF/F0');
+title(strcat('Region of Interest number ',int2str(n)));
+ylim([0 max(1,YMAX)]); xlim([0 AnalysedData.Times(n,end)]);
+h = zoom;
+h.motion = 'horizontal';
