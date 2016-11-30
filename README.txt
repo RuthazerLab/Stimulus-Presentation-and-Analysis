@@ -28,7 +28,7 @@
 		ThorRealTimeDataSettings.xml
 
 
-(2) extractData4(Folder)
+(2) extractData(Folder)
 	
 	This extracts Roi data to the data file 'Folder'.mat and then
 	analyses data and saves it to [Analysed 'Folder'].mat
