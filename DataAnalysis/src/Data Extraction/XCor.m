@@ -70,6 +70,7 @@ for j = 1:length(StimulusData.Times)
 	end
 end
 
+% Normalizes the response data
 % for i = 1:RoiCount
 % 	Responses(:,i) = (StimulusData.Responses(:,i)-mean(AnalysedData.dFF0(i,:)))/std(AnalysedData.dFF0(i,:));
 % end

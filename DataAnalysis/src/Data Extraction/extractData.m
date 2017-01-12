@@ -147,7 +147,7 @@ function [header ImageData] = getTimeSeries(Folder)
   % Removing "noisy" frames.
   excludeIndices = [];
 
-  header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', FrameCount, 'fps', fps, 'exInd', excludeIndices,'FlyBackFrames',FlyBackFrames,'ImageWidth',ImageWidth,'ImageHeight',ImageHeight);
+  header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', ImagesPerSlice, 'fps', fps, 'exInd', excludeIndices,'FlyBackFrames',FlyBackFrames,'ImageWidth',ImageWidth,'ImageHeight',ImageHeight);
   save(fullfile(Folder,fileName), 'header', 'ImageData');
 
 end
