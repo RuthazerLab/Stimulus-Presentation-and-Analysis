@@ -1,19 +1,57 @@
 T = time2Frame(StimulusData.Times,AnalysedData);
 R = AnalysedData.dFF0;
+[RoiCount ExperimentTime] = size(R);
 
-for i = 1:length(T)
-	for j = 1:length(R)
-		XCOR(j,i) = mean(R(j,T(i):T(i)+6));
+% Frames after onset of stimulus defining "active" window
+CritWindow 	= ceil((StimulusData.Configuration.DisplayLength+3)*header.FPS);
+
+% Different stimuli presented
+stimType 	= sort(uniqueElements(StimulusData.Raw(:,3)));
+
+% Order numbers for null stimulus
+Controls 	= find(StimulusData.Raw(:,3) == 0);
+
+% Intialize main vectors
+XCOR 		= zeros(RoiCount,length(stimType)-1,CritWindow*StimulusData.Configuration.Repetitions);
+contVector 	= zeros(RoiCount,length(find(StimulusData.Raw(:,3) == 0)));
+
+
+for j = 1:RoiCount
+
+	for k = 1:length(stimType)
+		
+		% At which order numbers this stimulus was presented
+		stimTimes = find(StimulusData.Raw(:,3) == stimType(k));
+		
+		% Conflate all instances into one vector for each stimulus
+		for i = 1:length(stimTimes)
+			if(k == 1) % Different vector for controls (may be a different number of control stimuli)
+				contVector(j,1+(i-1)*CritWindow:1+i*CritWindow) = R(j,T(stimTimes(i)):T(stimTimes(i))+CritWindow);
+			else
+				XCOR(j,k-1,1+(i-1)*CritWindow:1+i*CritWindow) = R(j,T(stimTimes(i)):T(stimTimes(i))+CritWindow);
+			end
+		end
+
 	end
+	RSTATS(j,1) = mean(contVector(j,:));
+	RSTATS(j,2) = std(contVector(j,:));
 end
+
 
 
 % std(Control) = 0.133; mean(Control) = 0.0596;
 % Thresh = std(Control)*t + mean(Control)
+a = []; b =[];
+for j = 1:RoiCount
+	for k = 1:length(stimType)-1
+		if(mean(XCOR(j,k,:)) > RSTATS(j,1) + RSTATS(j,2)*2.776)
+			a(end+1) = j;
+			b(end+1) = k;
+		end
+	end
+end
 
-[a b] = find(XCOR(:,:) > 0.4);
-
-Responding_ROI = zeros(1,1315);
+Responding_ROI = zeros(1,RoiCount);
 Responding_ROI(1,a) = 1;
 
 A = AnalysedData.RoiCoords(:,find(Responding_ROI));
@@ -21,9 +59,9 @@ rX = A(1,:); rY = A(2,:); rZ = A(3,:);
 A = AnalysedData.RoiCoords;
 X = A(1,:); Y = A(2,:); Z = A(3,:);
 
-% hold off; scatter(X(Z==1),Y(Z==1),50,'filled','b');
-% hold on; scatter(rX(rZ==1),rY(rZ==1),50,'filled','y');
-% axis square; ylim([0 512]); xlim([0 512]);
+hold off; scatter(X(Z==1),Y(Z==1),50,'filled','b');
+hold on; scatter(rX(rZ==1),rY(rZ==1),50,'filled','y');
+axis square; ylim([0 512]); xlim([0 512]);
 
 % 	n-1		0%	 	50% 	60% 	70% 	80% 	90% 	95% 	98% 	99% 	99.8% 	99.9%
 % 	1	 	0.000 	1.000 	1.376 	1.963 	3.078 	6.314 	12.71 	31.82 	63.66 	318.31 	636.62

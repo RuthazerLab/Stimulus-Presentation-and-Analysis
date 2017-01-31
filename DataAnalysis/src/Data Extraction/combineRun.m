@@ -1,55 +1,25 @@
-function header = extractData(Folder, ImageData)
+function header = combineData(Folder1, Folder2)
 
-% header = extractData3(Folder)
-%   Takes experiment folder and outputs analysed image data
-% 
-% 
+  Folder1 = fullfile(pwd,Folder1); Folder2 = fullfile(pwd,Folder2);
 
-  email = 'brakeniklas@gmail.com';
-  reply = input('Email when done? Y/N [Y]:','s');
 
-  tic;
-  
-  try
+  %% Extract data from .raw file in Folder
+  [header1 ImageData] = getTimeSeries(Folder1, Folder2);
 
-    switch nargin
-
-    case 1
-        %% Extract data from .raw file in Folder
-        [header1 ImageData] = getTimeSeries(Folder);
-        
-        %% Analyse data from ImageData 
-        [header correlated] = analyseTimeSeries(header1, ImageData);
-    case 2
-        %% Analyse data from ImageData 
-        [header correlated] = analyseTimeSeries(Folder, ImageData);
-    otherwise
-      ME = MException('MATLAB:actionNotTaken','Invalid number of input arguments.');
-      throw(ME);
-    end
-
-    if isempty(reply)
-      sendMail(email,'Analysis is complete!', [header.FileName, ' was analysed in ', int2str(round(toc/6)/10), ' minutes. Correlated = ' int2str(correlated)]);
-    end
-
-  catch Last_Error
-
-    msg = getReport(Last_Error);
-
-    if isempty(reply)
-      sendMail(email,'Analysis incomplete. ', msg);
-    end
-    disp(msg);
-  end
+  %% Analyse data from ImageData 
+  [header correlated] = analyseTimeSeries(header1, ImageData);
 
   clearvars -except header;
 
-end
 
-function [header ImageData] = getTimeSeries(Folder)
+
+
+function [header ImageData] = getTimeSeries(Folder1, Folder2)
+
+  Folder = pwd;
 
   % Extract experiment data from Experiment.xml file
-  MetaData      = xml2struct(fullfile(Folder,'Experiment.xml'));
+  MetaData      = xml2struct(fullfile(Folder1,'Experiment.xml'));
   ImageWidth    = str2num(MetaData.ThorImageExperiment.LSM.Attributes.pixelX);
   ImageHeight   = str2num(MetaData.ThorImageExperiment.LSM.Attributes.pixelY);
   FrameCount    = str2num(MetaData.ThorImageExperiment.Streaming.Attributes.frames);
@@ -66,7 +36,7 @@ function [header ImageData] = getTimeSeries(Folder)
   ImagesPerSlice = FrameCount / (StepCount + FlyBackFrames);
 
   % Get projected Images for each slice
-  Average_Images = zProj3(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
+  Average_Images = zProj3(fullfile(Folder1,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
 
   % Add ImageJ library to JAVACLASSPATH
   Miji(false);
@@ -136,11 +106,11 @@ function [header ImageData] = getTimeSeries(Folder)
   IJ.getInstance().quit();
 
   % Measures average pixel value for each ROI
-  Results = measure(fullfile(Folder,'Image_0001_0001.raw'), ImagesPerSlice, ImageWidth, ImageHeight, StepCount, FlyBackFrames, XBounds, YBounds);
-
+  Results = measure(fullfile(Folder1,'Image_0001_0001.raw'), ImagesPerSlice, ImageWidth, ImageHeight, StepCount, FlyBackFrames, XBounds, YBounds);
+  Results2 = measure(fullfile(Folder2, 'Image_0001_0001.raw'), ImagesPerSlice, ImageWidth, ImageHeight, StepCount, FlyBackFrames, XBounds, YBounds);
   % Save measurements for each ROI
   for Slice = 1:StepCount
-    ImageData(Slice).Results = Results{Slice};
+    ImageData(Slice).Results = [Results{Slice}; Results2{Slice}];
   end  
 
   % Get Folder name, save data with name 
@@ -150,28 +120,38 @@ function [header ImageData] = getTimeSeries(Folder)
   % Removing "noisy" frames.
   excludeIndices = [];
 
-  header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', ImagesPerSlice, 'fps', fps, 'exInd', excludeIndices,'FlyBackFrames',FlyBackFrames,'ImageWidth',ImageWidth,'ImageHeight',ImageHeight);
+  header = struct('FileName', fileName, 'DataPath1',Folder1, 'DataPath2',Folder2, 'Slices', StepCount, 'Frames', ImagesPerSlice, 'fps', fps, 'exInd', excludeIndices,'FlyBackFrames',FlyBackFrames,'ImageWidth',ImageWidth,'ImageHeight',ImageHeight);
   save(fullfile(Folder,fileName), 'header', 'ImageData');
 
-end
+
 
 
 function [header correlated] = analyseTimeSeries(header, ImageData)
 
-  Folder = header.DataPath;
+  Folder = pwd;
+
+  Folder1 = header.DataPath1;
+  Folder2 = header.DataPath2;
   filename = header.FileName;
   datafile = [Folder '\Analysed ' filename];
 
   % Read StimulusTimes.txt and StimulusConfig.txt. If no config file
   % use default values.
-  RawStimulusData = tabulate(readLines(fullfile(Folder,'StimulusTimes.txt')));
+  RawStimulusData = tabulate(readLines(fullfile(Folder1,'StimulusTimes.txt')));
+  RawStimulusData2 = tabulate(readLines(fullfile(Folder2,'StimulusTimes.txt')));
+  l = length(RawStimulusData);
+  RawStimulusData = [RawStimulusData; RawStimulusData2];
+  RawStimulusData(l+1:end,2) = RawStimulusData(l+1:end,2) + RawStimulusData(l,2);
+  RawStimulusData(l+1:end,1) = RawStimulusData(l+1:end,1) + RawStimulusData(l,1);
+
+
   try
-    temp = tabulate(readLines(fullfile(Folder,'StimulusConfig.txt')));
+    temp = tabulate(readLines(fullfile(Folder1,'StimulusConfig.txt')));
   catch
     temp = [5 2 10 0.2 5; 600 1200 140 360 0];
   end
   Config.StimuliCount   = temp(1,1);
-  Config.Repetitions    = temp(1,2);
+  Config.Repetitions    = 2*temp(1,2);
   Config.Type           = temp(1,3);
   Config.DisplayLength  = temp(1,4);
   Config.RestLength     = temp(1,5);
@@ -184,21 +164,19 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   Config.Background     = temp(2,6);
 
   % Attempt to get capture times, otherwise estimate with frames per second.
-  try
-    LoadSyncEpisode([Folder '\']);
-    GenerateFrameTime;
-  catch
-    disp('No Sync data');
-    frameTime = linspace(0,header.Frames/header.fps,header.Frames);
-  end
+  LoadSyncEpisode([Folder1 '\']);
+  GenerateFrameTime;
+  frameTime1 = frameTime;
+  LoadSyncEpisode([Folder2 '\']);
+  GenerateFrameTime;
+  frameTime2 = frameTime + repmat(frameTime1(end),[length(frameTime1) 1]);
+  frameTime = [frameTime1;frameTime2];
 
   % Get length of experiment
   TimeLapse = frameTime(end);
 
   % Reorient data to ROI-oriented structure
-  m = ceil((Config.RestLength+Config.DisplayLength)*header.fps); % Frame range for autocorrelation
-  [RoiData RoiCoordinates] = getRoiData(ImageData, m);
-
+  [RoiData RoiCoordinates] = getRoiData(ImageData);
 
   % Normalize data with percent above baseline
   try
@@ -222,11 +200,13 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   StimulusData = struct('Raw',RawStimulusData,'Times',StimulusTimes,'Configuration',Config);
   header = struct('FileName',['Analysed ' filename], 'RoiCount', length(RoiData), 'StimuliCount', ...
     length(StimulusTimes),'TimeLapse', TimeLapse, 'FPS', header.fps, 'Frames', ...
-    header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight',header.ImageHeight, 'FlyBackFrames', header.FlyBackFrames,'AutoCorrFrames',m);
+    header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight',header.ImageHeight, 'FlyBackFrames', header.FlyBackFrames);
 
   % Add cross correlation results to StimulusData
   try
-    getXCor;
+    XCor;
+    StimulusData.Responses = Responses;
+    StimulusData.Vector = S;
     correlated = true;
     for i = 1:length(RoiData)
       RoiData(i).ControlResponse = Responses(1,i);
@@ -247,5 +227,3 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   % Save final analysed data
   save(datafile, 'header','AnalysedData','StimulusData','RoiData');
 
-
-end

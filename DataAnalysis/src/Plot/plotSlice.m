@@ -82,7 +82,7 @@ if(length(c(t,:)) > 0)
 		x(end+1) = x(end); y(end+1) = y(end); c(t,end+1) = c(t,end);
 	end
 	% handles.axes1 = 
-	scatter(x,y,50,c(t,:),'filled','s'); hold on;
+	scatter(x,y,50,c(t,:),'filled'); hold on;
 else
 
 	% handles.axes1 = 
@@ -105,8 +105,8 @@ end
 
 if(Single_Roi || handles.toggleValue ~= 2 && handles.toggleValue ~= 3)
 
-	set(gca,'Color',[0.05 0.05 0.05]);
-	colormap gray;
+	% set(gca,'Color',[0.05 0.05 0.05]);
+	% colormap gray;
 
 else
 	colormap parula;
