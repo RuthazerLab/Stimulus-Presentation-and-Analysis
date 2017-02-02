@@ -12,6 +12,6 @@ function r = rhat(tau,x)
 	N = length(x);
 	r = 0;
 	for t = 1:N-tau
-		r = x(t+tau)*x(t) + r;
+		r = r + x(t+tau)*x(t);
 	end
 	r = r/N;

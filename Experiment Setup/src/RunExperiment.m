@@ -22,7 +22,7 @@ function varargout = RunExperiment(varargin)
 
 % Edit the above text to modify the response to help RunExperiment
 
-% Last Modified by GUIDE v2.5 20-Jun-2016 12:32:12
+% Last Modified by GUIDE v2.5 02-Feb-2017 12:11:57
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -134,8 +134,8 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 
 end
 
-
 %% ---- Opening Function ---- %%
+
 
 % --- Executes just before RunExperiment is made visible.
 function RunExperiment_OpeningFcn(hObject, eventdata, handles, varargin)
@@ -150,11 +150,12 @@ function RunExperiment_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 handles.folder = '.';
 handles.text9.String = ['Save to: ' handles.folder '\'];
+handles.edit10.String = '0';
 handles.typ = 0;
 handles.ssiz = str2num(handles.edit11.String);
 
 % Names of the different stimulus options
-handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'Intensity Circles'; 'Moving Bars'; 'Brightness Levels'; 'Balanced Squares';'Mutli Balanced Squares';'Balanced Circles';'Varying Radii'};
+handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'Intensity Circles'; 'Moving Bars'; 'Brightness Levels'; 'Balanced Squares';'ROI Bars';'Balanced Circles';'Varying Radii'};
 handles.text1.set('Visible','off'); handles.edit1.set('Visible','off');
 handles.text2.set('Visible','off'); handles.edit2.set('Visible','off');
 handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
@@ -269,12 +270,14 @@ case 5  % Balanced Squares
   handles.text2.set('String', 'Num Squares:'); handles.edit2.set('String',F);
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
 
-case 6  % Mutli Balanced Squares
+case 6  % ROI Bars
 
   handles.edit2.set('Value',1);
   handles.edit2.set('style','popupmenu');
   handles.edit2.Position(3) = 7.5;
 
+  % Number of squares are any factor of ssiz, to ensure the number of
+  % squares fit evenly in the field
   factors = compFact(handles.ssiz);
   for i = 1:min(length(factors),10)
     F{i} = factors(i);
@@ -285,21 +288,6 @@ case 6  % Mutli Balanced Squares
   handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
   handles.text2.set('String', 'Num Squares:'); handles.edit2.set('String',F);
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
-
-  % handles.edit2.set('Value',1);
-  % handles.edit2.set('style','popupmenu');
-  % handles.edit2.Position(3) = 7.5;
-
-  % factors = compFact(handles.ssiz);
-  % for i = 1:min(length(factors),10)
-  %   F{i} = factors(i);
-  % end
-
-  % handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
-  % handles.text1.set('String', 'Repitition'); handles.edit1.set('String','1');
-  % handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
-  % handles.text2.set('String', 'Num Squares:'); handles.edit2.set('String',F);
-  % handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
 
 case 7  % Balanced Intensity Circles
 
@@ -372,6 +360,8 @@ handles.buffer = str2num(handles.edit10.String);  % Offset from bottom
 handles.ssiz   = str2num(handles.edit11.String);  % Size of display area
 handles.lag1   = str2num(handles.edit12.String);  % Length of stimulus
 handles.lag2   = str2num(handles.edit13.String);  % Length of pause
+handles.Background = str2num(handles.edit15.String) % Background greyness
+handles.Contrast   = str2num(handles.edit16.String) % Intesnity of stimulus wrt background
 
 typ = handles.typ;
 num = 1;
@@ -425,15 +415,12 @@ case 5    % Balanced Squares
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
 
-case 6    % Multi Balanced Squares
+case 6    % ROI Bars
 
   num = handles.factors{handles.edit2.Value};
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
 
-  % num = handles.factors{handles.edit2.Value};
-  % fois = str2num(handles.edit1.String);
-  % variables = [fois typ num];
 
 case 7
 
@@ -582,6 +569,8 @@ function handles = updateTime(hObject, eventdata, handles)
     L = L * (str2num(handles.edit2.String{handles.edit2.Value})^2+1);
   case {3, 5}
     L = L * (1+str2num(handles.edit2.String));
+  case 6
+
   case {7}
     L = L * (str2num(handles.edit2.String{handles.edit2.Value})^2*2+1);
   case 8
@@ -593,3 +582,49 @@ function handles = updateTime(hObject, eventdata, handles)
   L = L + 10;
   [Minutes Seconds] = mdivide(L,60);
   handles.text4.set('String',['Run Time: ' leftpad(Minutes,2) ':' leftpad(ceil(Seconds),2)]);
+
+
+
+function edit15_Callback(hObject, eventdata, handles)
+% hObject    handle to edit15 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit15 as text
+%        str2double(get(hObject,'String')) returns contents of edit15 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit15_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit15 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit16_Callback(hObject, eventdata, handles)
+% hObject    handle to edit16 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit16 as text
+%        str2double(get(hObject,'String')) returns contents of edit16 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit16_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit16 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

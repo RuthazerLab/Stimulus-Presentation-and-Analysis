@@ -23,19 +23,21 @@ radius = handles.circleRadius;  % Radius of a circle
 lag1 = handles.lag1;        % Length of stimulus
 lag2 = handles.lag2;        % Length of pause
 
+Background = handles.Background;
+PlusMinusDifference = handles.Contrast;
 
-% Initializes black screen and flash
+% Initializes black screen and White
 Black = zeros(height,width);
-flash = ones(height,width);
+White = ones(height,width);
 
-% flash(:,:,2) = 0;
 
-GreyValue = 0.25;
-PlusMinusDifference = 0.25;
-Grey = flash*GreyValue;
+if(Background < 0.5)
+  Sign = 1;
+else
+  Sign = -1;
+end
 
-%%%% Temporary
-Sign = -1;
+
 
 % Initializes figure (maximize window after it appears)
 fig = figure('NumberTitle','off','MenuBar','none','toolbar','none','color',[0 0 0],'DockControls','off');
@@ -52,16 +54,11 @@ case 1  % Random squares
   vars = {0};
   conversion = @(i,num) i;
   randomFunction = @randomOrder;
-  Background = Black;
 
   % Load stimuli into matrix
   for i = 1:num
-    I(:,:,i) = square({i, ssiz, sqrt(num), height, width, buff});
+    I(:,:,i) = square({i, ssiz, sqrt(num), height, width, buff, Sign, Background, PlusMinusDifference});
   end
-
-  % I = repmat(I,[1 1 1 3]);
-  % I(:,:,:,2) = 0;
-  % I = permute(I,[1 2 4 3]);
 
 case 2  % Circle of specified shade and radius
 
@@ -70,7 +67,7 @@ case 2  % Circle of specified shade and radius
   vars = {0,num,GreyValue};
   conversion = @(i,num) i+1;
   randomFunction = @randomOrder;
-  Background = Black;
+  Background = 0;
 
   % Load stimuli into matrix
   for i = 1:num+1
@@ -82,7 +79,7 @@ case 2  % Circle of specified shade and radius
 case 3  % Displays bar in specified direction and width
 
   % Set stimulus-specific functions and variables
-  Background = Black;
+  Background = 0;
   I = loadLUT(variables(4), variables(5), variables(6), height,width);
   randomFunction = @(a,b,c) null(1);
 
@@ -95,7 +92,7 @@ case 4 % Display Brightness Levels
   vars = {0,num,GreyValue};
   conversion = @(i,num) i+1;
   randomFunction = @randomOrder;
-  Background = Black;
+  Background = 0;
 
   % Load stimuli into matrix
   for i = 1:num+1
@@ -113,59 +110,35 @@ case 5  % Displays dark/light squares on black background
   vars = {0};
   conversion = @(i,num) i+num+1;
   randomFunction = @randomOrder2;
-  Background = Grey;
+  Background = 0.5;
+  PlusMinusDifference = 0.25;
 
   % Load stimuli into matrix
   for i = -num:num
-    I(:,:,i+num+1) = balancedSquare({abs(i), ssiz, sqrt(num), height, width, buff, sign(i), GreyValue, PlusMinusDifference});
+    I(:,:,i+num+1) = balancedSquare({abs(i), ssiz, sqrt(num), height, width, buff, sign(i), Background, PlusMinusDifference});
   end
 
-case 6  % Display three at a time: not implemented in current structure
+case 6  % Displays bars, overlap for ROI detection.
 
   % Set stimulus-specific functions and variables
-  num = num^2;
+  num = num;
   number2data = @(vars) vars{1};
   vars = {0};
   conversion = @(i,num) i;
   randomFunction = @randomOrder;
-  Background = Grey;
 
   % Load stimuli into matrix
-  for i = 1:num
-    I(:,:,i) = balancedSquare({abs(i), ssiz, sqrt(num), height, width, buff, Sign, GreyValue, PlusMinusDifference});
-  end 
+  for j = 0:1
+    for i = 1:num
+      I(:,:,i+num*j) = RoiBars({i, ssiz, num, height, width, buff, Sign, Background, PlusMinusDifference, j});
+    end
+  end
 
   PlusMinusDifference = Sign;
 
+  num = 2*num;
 
-  % ran = randomOrder3(num^2,fois,1);
-
-  % PlusMinusDifference = 0.3;
-
-  % Grey = ones(height,width)*GreyBackground;
-
-  % [a b] = size(ran);
-
-  % for i = 1:a
-  %   data(end+1,1) = i;
-  %   data(end,2) = toc(start);
-  %   data(end,3) = ran(i,1);
-  %   data(end,4) = ran(i,2);
-  %   data(end,5) = ran(i,3);
-
-  %   if(rand(i,1) == 0)
-  %     pause(lag1)
-  %   else
-  %     figure(fig),imshow(balancedSquares({abs(ran(i,:)), ssiz, num, height, width, buff, sign(ran(i,:)), GreyBackground, PlusMinusDifference}),'border','tight','parent',gca);
-  %     pause(lag1);
-  %   end
-
-  %   figure(fig), imshow(Grey,'border','tight','parent',gca);
-  %   pause(lag2);
-  % end
-
-
-case 7  % Circle of specific shade on grey background
+case 7  % Circle of specific shade
 
   % Set stimulus-specific functions and variables
   levels = PlusMinusDifference/num;
@@ -173,11 +146,10 @@ case 7  % Circle of specific shade on grey background
   vars = {0, levels};
   conversion = @(i,num) i+num+1;
   randomFunction = @randomOrder2;
-  Background = Grey;
 
   % Load stimuli into matrix
   for i = -num:num
-    I(:,:,i+num+1) = circle({levels*i+GreyValue,width,height,ssiz,buff,radius,Grey(:,:,1)});
+    I(:,:,i+num+1) = circle({levels*i+Background,width,height,ssiz,buff,radius,Grey(:,:,1)});
   end
 
   % I = repmat(I,[1 1 1 3]);
@@ -191,7 +163,6 @@ case 8   % Circles of different radii
   vars = {0, num, ssiz};
   conversion = @(i,num) i;
   randomFunction = @randomOrder;
-  Background = Grey;
 
   % Load stimuli into matrix
   for i = 1:num+1
@@ -203,7 +174,7 @@ case 8   % Circles of different radii
 end 
 
 % Display blank background
-figure(fig), imshow(Background,'border','tight','Parent',gca);
+figure(fig), imshow(Background*White,'border','tight','Parent',gca);
 shade = Background(1,1);
 
 
@@ -227,7 +198,7 @@ if(Triggered)
   outputSingleScan(s,0);
 end
 Props(1,:) = [length(ran)/fois fois, typ, lag1, lag2, PlusMinusDifference];
-Props(2,:) = [num, height, width, buff,ssiz, GreyValue];
+Props(2,:) = [num, height, width, buff,ssiz, Background];
 
 Pos = get(gcf,'Position');
 set(gcf,'Position',Pos + [0 0 0 25]);
@@ -244,9 +215,11 @@ pause(9);
 for i = 1:length(ran)
   vars{1} = ran(i);
   data(i,1) = i;
-  data(i,2) = toc(start);
   data(i,3) = number2data(vars);  % Convert stimulus number into discriptive number
+end
 
+for i = 1:length(ran)
+  data(i,2) = toc(start);
   % Presentation background as control
   if(ran(i) == 0)
     pause(lag1);
@@ -257,7 +230,7 @@ for i = 1:length(ran)
     pause(max(lag1-toc,0)); % Accounts for image presentation time in lag 
   end
   tic;
-  imshow(Background,'border','tight','Parent',gca);
+  imshow(Background*White,'border','tight','Parent',gca);
   pause(max(lag2-toc,0)); % Accounts for image presentation time in lag 
 end
 
