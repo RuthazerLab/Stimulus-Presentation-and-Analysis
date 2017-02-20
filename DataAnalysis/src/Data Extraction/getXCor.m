@@ -28,10 +28,10 @@ end
 
 
 
-for i = 1:stimCount
-	xbar(i) = mean(RoiData(560).XCor(i,:));
-	sigma(i) = std(RoiData(560).XCor(i,:));
-end
-hold off;
-bar([0:16],RoiData(560).XCor); hold on;
-h=errorbar([0:16],xbar,sigma,'b'); set(h,'linestyle','none')
+% for i = 1:stimCount
+% 	xbar(i) = mean(RoiData(560).XCor(i,:));
+% 	sigma(i) = std(RoiData(560).XCor(i,:));
+% end
+% hold off;
+% bar([0:16],RoiData(560).XCor); hold on;
+% h=errorbar([0:16],xbar,sigma,'b'); set(h,'linestyle','none')

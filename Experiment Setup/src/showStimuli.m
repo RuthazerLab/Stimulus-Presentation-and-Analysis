@@ -40,7 +40,7 @@ end
 
 
 % Initializes figure (maximize window after it appears)
-fig = figure('NumberTitle','off','MenuBar','none','toolbar','none','color',[0 0 0],'DockControls','off');
+fig = figure('NumberTitle','off','MenuBar','none','toolbar','none','color',[Background Background Background],'DockControls','off');
 
 
 % Generates images to be presented to reduce computation time alter

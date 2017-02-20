@@ -6,7 +6,7 @@ function header = extractData(Folder, ImageData)
 % 
 
   email = 'brakeniklas@gmail.com';
-  reply = input('Email when done? Y/N [Y]:','s');
+  reply = {}; %input('Email when done? Y/N [Y]:','s');
 
   tic;
   
@@ -115,7 +115,7 @@ function [header ImageData] = getTimeSeries(Folder)
     delete(fullfile(Folder,['Slice' int2str(Slice) '.tif']));
 
     % Save Roi Coordinates in struct
-    ImageData(Slice) = struct('Slice', Slice, 'Results', [], 'NumOfROIs', length(CoordinateCenter(:,1)), 'RoiCoordinates', transpose(CoordinateCenter));
+    ImageData(Slice) = struct('Slice', Slice, 'Results', [], 'NumOfROIs', length(CoordinateCenter(:,1)), 'RoiCoordinates', transpose(CoordinateCenter),'Average',Average_Images);
 
 
     % Get ROIs and initialize their respective rectangular regions
@@ -132,7 +132,6 @@ function [header ImageData] = getTimeSeries(Folder)
   end
 
   % Clean up workspace
-  clearvars Average_Images;
   IJ.getInstance().quit();
 
   % Measures average pixel value for each ROI
@@ -230,18 +229,26 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
     correlated = true;
     for i = 1:length(RoiData)
       RoiData(i).ControlResponse = Responses(1,i);
-      if(StimulusData.Configuration.Type == 1 || StimulusData.Configuration.Type == 6)
+      if(StimulusData.Configuration.Type == 1)
         squareSize = sqrt(StimulusData.Configuration.StimuliCount-1);
         RoiData(i).RF = reshape(Responses(2:end,i),[squareSize squareSize]);
+      else if(StimulusData.Configuration.Type == 6)
+        siz = (StimulusData.Configuration.StimuliCount-1)/2;
+        T = StimulusData.Responses(2:end,i);
+        Q = ones(siz,siz);
+        for j = 1:siz
+          Q(j,:) = Q(j,:).*repmat(T(j),[1 siz]);
+          Q(:,j) = Q(:,j).*repmat(T(j+siz),[siz 1]);
+        end
+        RoiData(i).RF = Q;
       end
+
       RoiData(i).RFCenter = getMiddle(Responses,i,StimulusData.Configuration);
       RoiData(i).RFSize = [];
     end
   catch Error
     Error = lasterror;
-    disp(['Unexpected error in XCor.m line ' int2str(Error.stack(1).line) ': ']);
-    disp(Error.message);
-    correlated = false;
+    disp('An error occured in correlation-related computation.');
   end
 
   % Save final analysed data
