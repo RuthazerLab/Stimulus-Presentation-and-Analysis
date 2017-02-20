@@ -4,10 +4,19 @@ siz = Config.Number^0.5;
 typ = Config.Type;
 
 % Reshapes Responses variable (from XCor.m) into grid
-if(typ == 1 || 6)
+if(typ == 1)
 	RoiResponse = Responses(2:end,k) - Responses(1,k);
 elseif(typ == 5)
 	RoiResponse = Responses(siz^2+2:end,k) - Responses(siz^2,k);
+elseif(typ == 6)
+	siz = Config.Number/2;
+	T = Responses(2:end,k);
+	Q = zeros(siz,siz);
+	for i = 1:siz
+		Q(i,:) = Q(i,:) + repmat(T(i),[1 siz]);
+		Q(:,i) = Q(:,i) + repmat(T(i+siz),[siz 1]);
+	end
+	RoiResponse = reshape(Q,[siz^2 1]);
 else
 	mid = [1 1];
 	return;
@@ -27,6 +36,9 @@ if(sum(RoiResponse) == 0)
 end
 
 A = reshape(RoiResponse,[siz siz]);
+if(typ == 6)
+	A = Q;
+end
 S = zeros(siz,siz);
 
 for i = 1:siz

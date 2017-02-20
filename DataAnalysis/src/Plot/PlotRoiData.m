@@ -341,7 +341,8 @@ function listbox2_Callback(hObject, eventdata, handles)
 			bar(handles.StimulusData.Times,YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05);
 			hold on;
 			bar(handles.StimulusData.Times,-YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05,'r');
-			plot(handles.AnalysedData.Times(n,:),((handles.AnalysedData.dFF0(n,:)-mean(handles.AnalysedData.dFF0(n,:)))/std(handles.AnalysedData.dFF0(n,:))));
+			% plot(handles.AnalysedData.Times(n,:),((handles.AnalysedData.dFF0(n,:)-mean(handles.AnalysedData.dFF0(n,:)))/std(handles.AnalysedData.dFF0(n,:))));
+			plot(handles.AnalysedData.Times(n,:),((handles.AnalysedData.dFF0(n,:))));
 			hold off;
 			xlabel('Time');
 			ylabel('dF/F0');
@@ -661,6 +662,7 @@ else
 	ylabel('dF/F0');
 	title(strcat('Region of Interest number ',int2str(n)));
 	% ylim([0 max(1,YMAX)]);
+	xlim([0 handles.AnalysedData.Times(n,end)]);
 	h = zoom;
 	h.motion = 'horizontal';
 end

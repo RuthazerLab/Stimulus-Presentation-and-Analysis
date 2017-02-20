@@ -183,7 +183,6 @@ F = {};
 handles.text15.set('String', 'Stim Length'); 
 handles.edit12.set('String','0.2');
 
-
 switch typ
 
 case 0  % Align
@@ -344,7 +343,7 @@ handles.folder = uigetdir();
 if(handles.folder == 0)
   return;
 end
-handles.text9.set('String', ['Save to: ...' handles.folder(min(end-50,1):end)]);
+handles.text9.set('String', ['Save to: ...' handles.folder(max(end-50,1):end)]);
 guidata(hObject, handles);
 
 
@@ -360,8 +359,8 @@ handles.buffer = str2num(handles.edit10.String);  % Offset from bottom
 handles.ssiz   = str2num(handles.edit11.String);  % Size of display area
 handles.lag1   = str2num(handles.edit12.String);  % Length of stimulus
 handles.lag2   = str2num(handles.edit13.String);  % Length of pause
-handles.Background = str2num(handles.edit15.String) % Background greyness
-handles.Contrast   = str2num(handles.edit16.String) % Intesnity of stimulus wrt background
+handles.Background = str2num(handles.edit15.String); % Background greyness
+handles.Contrast   = str2num(handles.edit16.String); % Intesnity of stimulus wrt background
 
 typ = handles.typ;
 num = 1;
@@ -371,7 +370,15 @@ switch typ
 
 case 0    % Align
 
-  figure('NumberTitle','off','MenuBar','none','toolbar','none','color',[0 0 0],'DockControls','off'),imshow(square({1, handles.ssiz, 1, handles.height, handles.width, handles.buffer}),'border','tight','parent',gca);
+  Background = handles.Background;
+
+  if(Background < 0.5)
+    Sign = 1;
+  else
+    Sign = -1;
+  end
+  figure('NumberTitle','off','MenuBar','none','toolbar','none','color',[Background, Background, Background],'DockControls','off');
+  imshow(square({1, handles.ssiz, 1, handles.height, handles.width, handles.buffer,Sign,Background,handles.Contrast}),'border','tight','parent',gca);
   uiwait();
   return;
 
@@ -570,9 +577,9 @@ function handles = updateTime(hObject, eventdata, handles)
   case {3, 5}
     L = L * (1+str2num(handles.edit2.String));
   case 6
-
+     L = L * (str2num(handles.edit2.String{handles.edit2.Value})^2*2+1);
   case {7}
-    L = L * (str2num(handles.edit2.String{handles.edit2.Value})^2*2+1);
+    L = L * (str2num(handles.edit2.String{handles.edit2.Value})*2+1);
   case 8
     L = L * str2num(handles.edit2.String)*2+1;
   case 9

@@ -39,7 +39,7 @@ for i = 1:length(RoiData)
 		av(i,j) = mean(F(i,max(j-AvgFrame,1):min(j+AvgFrame,length(RoiData(1).Brightness))));
 
 		% Finds baseline from previous BLThresh frames
-		F0(i,j) = min(F(i,max(j-BLThresh,1):j));
+		F0(i,j) = min(av(i,max(j-BLThresh,1):j));
 
 		% Normalizes data to percent above baseline
 		R(i,j) = (F(i,j)-F0(i,j))/F0(i,j);
@@ -52,7 +52,7 @@ for i = 1:length(RoiData)
 
 end
 
-D = R;
+% D = R;
 
 
 delete(h);
