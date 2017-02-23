@@ -6,7 +6,7 @@ function header = extractData(Folder, ImageData)
 % 
 
   email = 'brakeniklas@gmail.com';
-  reply = {}; %input('Email when done? Y/N [Y]:','s');
+  reply = 'N'; %input('Email when done? Y/N [Y]:','s');
 
   tic;
   
@@ -224,35 +224,49 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
     header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight',header.ImageHeight, 'FlyBackFrames', header.FlyBackFrames,'AutoCorrFrames',m);
 
   % Add cross correlation results to StimulusData
+
   try
     getXCor;
+
     correlated = true;
     for i = 1:length(RoiData)
-      RoiData(i).ControlResponse = Responses(1,i);
+      RoiData(i).ControlResponse = StimulusData.Responses(1,i);
+
       if(StimulusData.Configuration.Type == 1)
-        squareSize = sqrt(StimulusData.Configuration.StimuliCount-1);
-        RoiData(i).RF = reshape(Responses(2:end,i),[squareSize squareSize]);
-      else if(StimulusData.Configuration.Type == 6)
+        siz = sqrt(StimulusData.Configuration.StimuliCount-1);
+        RoiData(i).RF = reshape(StimulusData.Responses(2:end,i),[siz siz]);
+
+      elseif(StimulusData.Configuration.Type == 6)
         siz = (StimulusData.Configuration.StimuliCount-1)/2;
         T = StimulusData.Responses(2:end,i);
         Q = ones(siz,siz);
+
         for j = 1:siz
           Q(j,:) = Q(j,:).*repmat(T(j),[1 siz]);
           Q(:,j) = Q(:,j).*repmat(T(j+siz),[siz 1]);
         end
+        
         RoiData(i).RF = Q;
       end
 
-      RoiData(i).RFCenter = getMiddle(Responses,i,StimulusData.Configuration);
-      RoiData(i).RFSize = [];
+      Z = RoiData(i).RF;
+      Y = []; X = [];
+      for a = 1:siz
+        for b = 1:siz
+          X(end+1:end+floor(Z(a,b)*1000)) = a;
+          Y(end+1:end+floor(Z(a,b)*1000)) = b;
+        end
+      end
+      Z = [X' Y'];
+      RoiData(i).RFmu = mean(Z); RoiData(i).RFsigma = cov(Z);
+
     end
-  catch Error
+  catch
     Error = lasterror;
     disp('An error occured in correlation-related computation.');
   end
 
   % Save final analysed data
   save(datafile, 'header','AnalysedData','StimulusData','RoiData');
-
 
 end

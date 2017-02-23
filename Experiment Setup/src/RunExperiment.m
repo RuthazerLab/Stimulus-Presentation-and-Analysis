@@ -1,24 +1,13 @@
 function varargout = RunExperiment(varargin)
 %RUNEXPERIMENT MATLAB code file for RunExperiment.fig
-%      RUNEXPERIMENT, by itself, creates a new RUNEXPERIMENT or raises the existing
-%      singleton*.
+%      User interface to present a visual stimulus chosen
+%      from a list. Also outputs a 5V trigger to an attached
+%      National Instrument Dev1, through ao1 to ThorSync.
+%      Creates the following files:
+%         StimulusData.txt
+%         StimulusConfig.txt
 %
-%      H = RUNEXPERIMENT returns the handle to a new RUNEXPERIMENT or the handle to
-%      the existing singleton*.
-%
-%      RUNEXPERIMENT('Property','Value',...) creates a new RUNEXPERIMENT using the
-%      given property value pairs. Unrecognized properties are passed via
-%      varargin to RunExperiment_OpeningFcn.  This calling syntax produces a
-%      warning when there is an existing singleton*.
-%
-%      RUNEXPERIMENT('CALLBACK') and RUNEXPERIMENT('CALLBACK',hObject,...) call the
-%      local function named CALLBACK in RUNEXPERIMENT.M with the given input
-%      arguments.
-%
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
-%
-% See also: GUIDE, GUIDATA, GUIHANDLES
+% See also: ANALYZEDATA, PLOTROIDATA
 
 % Edit the above text to modify the response to help RunExperiment
 
@@ -155,7 +144,7 @@ handles.typ = 0;
 handles.ssiz = str2num(handles.edit11.String);
 
 % Names of the different stimulus options
-handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'Intensity Circles'; 'Moving Bars'; 'Brightness Levels'; 'Balanced Squares';'ROI Bars';'Balanced Circles';'Varying Radii'};
+handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'Intensity Circles'; 'Moving Bars'; 'Brightness Levels'; 'Balanced Squares';'RF Bars';'Balanced Circles';'Varying Radii'};
 handles.text1.set('Visible','off'); handles.edit1.set('Visible','off');
 handles.text2.set('Visible','off'); handles.edit2.set('Visible','off');
 handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
@@ -269,7 +258,7 @@ case 5  % Balanced Squares
   handles.text2.set('String', 'Num Squares:'); handles.edit2.set('String',F);
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
 
-case 6  % ROI Bars
+case 6  % RF Bars
 
   handles.edit2.set('Value',1);
   handles.edit2.set('style','popupmenu');
@@ -353,6 +342,15 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+fid = fopen('test.txt','w');
+if(fid > 0)
+  fclose(fid);
+else
+  disp('No read/write permssion. Please select a different folder.');
+  return;
+end
+
+
 handles.height = str2num(handles.edit8.String);   % Height of images
 handles.width  = str2num(handles.edit9.String);   % Width of images
 handles.buffer = str2num(handles.edit10.String);  % Offset from bottom
@@ -422,7 +420,7 @@ case 5    % Balanced Squares
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
 
-case 6    % ROI Bars
+case 6    % RF Bars
 
   num = handles.factors{handles.edit2.Value};
   fois = str2num(handles.edit1.String);

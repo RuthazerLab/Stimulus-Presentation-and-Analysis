@@ -1,28 +1,15 @@
 function varargout = AnalyzeData(varargin)
-% ANALYZEDATA MATLAB code for AnalyzeData.fig
-%      ANALYZEDATA, by itself, creates a new ANALYZEDATA or raises the existing
-%      singleton*.
-%
-%      H = ANALYZEDATA returns the handle to a new ANALYZEDATA or the handle to
-%      the existing singleton*.
-%
-%      ANALYZEDATA('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in ANALYZEDATA.M with the given input arguments.
-%
-%      ANALYZEDATA('Property','Value',...) creates a new ANALYZEDATA or raises the
-%      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before AnalyzeData_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to AnalyzeData_OpeningFcn via varargin.
-%
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
-%
-% See also: GUIDE, GUIDATA, GUIHANDLES
-
-% Edit the above text to modify the response to help AnalyzeData
-
-% Last Modified by GUIDE v2.5 20-Feb-2017 11:48:50
+% AnalyzeData MATLAB code for AnalyzeData.fig
+% 		AnalyzeData implements the extractData.m in a user-friendly GUI
+% 		To use, do one of the following:
+% 		(i)	Choose SINGLE FILE and select the folder that contains the 
+% 			appropriate files. The data will be analyzed and the analyzed
+% 			data will be stored in the selected file.
+% 		(ii)Choose ENTIRE SET and select the folder containing all the
+% 			folders you wish to analyze. The program will loop through
+% 			each one and perform the single file analysis.
+% 
+% See also: extractData, RunExperiment, PlotRoiData
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -79,20 +66,25 @@ function FileButton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.Folder = uigetdir;
+Folder = uigetdir;
+handles.Folders = {};
 
 if(handles.Option1.Value == 1)
-	[a Folder] = fileparts(handles.Folder);
-	handles.FileNames.String = Folder;
+	[a FolderName] = fileparts(Folder);
+	handles.FileNames.String = FolderName;
+	handles.Folders{1} = Folder;
 else
 	S = {};
-	handles.SubFolders = [];
-	temp = dir(handles.Folder);
+	handles.Folders = [];
+	temp = dir(Folder);
 	for f = 3:length(temp)
-		if(isdir(temp(f).name))
+		if(isdir(fullfile(Folder,temp(f).name)))
 			S{end+1} = temp(f).name;
-			handles.SubFolders(end+1) = temp(f);
+			handles.Folders{end+1} = fullfile(Folder,temp(f).name);
 		end
+	end
+	if(length(S) > 7)
+		S{7} = '...';
 	end
 	handles.FileNames.String = S;
 end
@@ -104,14 +96,54 @@ guidata(hObject, handles);
 function ExecuteButton_Callback(hObject, eventdata, handles)
 % hObject    handle to ExecuteButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+% handles    structure with handles and user data (see GUIDATA)\
 
-if(handles.option1.Value == 1)
-	extractData(handles.Folder.name)
-else
-	for i = 1:length(handles.SubFolders)
-		extractData(handles.SubFolders(i).name)
+[FolderPath FolderName] = fileparts(handles.Folders{1});
+
+h = waitbar(1/length(handles.Folders), FolderName, 'Name','Analyzing Data');
+
+
+for i = 1:length(handles.Folders)
+	Correct = 1;
+	[FolderPath FolderName] = fileparts(handles.Folders{i});
+
+	waitbar(i/length(handles.Folders),h,FolderName);
+
+
+	if(~exist(fullfile(handles.Folders{i},'Episode001.h5')))
+		disp([FolderName ' is missing Episode001.h5']);
+		Correct = 0;
+	end
+	if(~exist(fullfile(handles.Folders{i},'Experiment.xml')))
+		disp([FolderName ' is missing Experiment.xml']);
+		Correct = 0;
+	end
+	if(~exist(fullfile(handles.Folders{i},'Image_0001_0001.raw')))
+		disp([FolderName ' is missing Image_0001_0001.raw']);
+		Correct = 0;
+	end
+	if(~exist(fullfile(handles.Folders{i},'StimulusConfig.txt')))
+		disp([FolderName ' is missing StimulusConfig.txt']);
+		Correct = 0;
+	end
+	if(~exist(fullfile(handles.Folders{i},'StimulusTimes.txt')))
+		disp([FolderName ' is missing StimulusTimes.txt']);
+		Correct = 0;
+	end
+	if(~exist(fullfile(handles.Folders{i},'ThorRealTimeDataSettings.xml')))
+		disp([FolderName ' is missing ThorRealTimeDataSettings.xml']);
+		Correct = 0;
+	end
+	if(Correct)
+		try
+			extractData(handles.Folders{i});
+		catch
+			disp(['An error occured while analyzing ' FolderName]);
+		end
+	end
 end
+		
+delete(h);
 
 % --- Executes on button press in HelpButton.
 function HelpButton_Callback(hObject, eventdata, handles)
