@@ -1,6 +1,8 @@
 function varargout = PlotRoiData(varargin)
 % PLOTROIDATA creates a visual representation of ROI data from
-% a .mat file as create by the function 'imanalyse'. 
+% a 'Analyzed NAME'.mat file as create by the function EXTRACTDATA.
+%
+% See also: ANALYZEDATA, RUNEXPERIMENT 
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;

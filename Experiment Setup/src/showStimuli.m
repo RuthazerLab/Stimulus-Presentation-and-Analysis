@@ -38,7 +38,6 @@ else
 end
 
 
-
 % Initializes figure (maximize window after it appears)
 fig = figure('NumberTitle','off','MenuBar','none','toolbar','none','color',[Background Background Background],'DockControls','off');
 
@@ -134,8 +133,6 @@ case 6  % Displays bars, overlap for ROI detection.
     end
   end
 
-  PlusMinusDifference = Sign;
-
   num = 2*num;
 
 case 7  % Circle of specific shade
@@ -151,10 +148,6 @@ case 7  % Circle of specific shade
   for i = -num:num
     I(:,:,i+num+1) = circle({levels*i+Background,width,height,ssiz,buff,radius,Grey(:,:,1)});
   end
-
-  % I = repmat(I,[1 1 1 3]);
-  % I(:,:,:,2) = 0;
-  % I = permute(I,[1 2 4 3]);
 
 case 8   % Circles of different radii
 
@@ -198,7 +191,7 @@ if(Triggered)
   outputSingleScan(s,0);
 end
 Props(1,:) = [length(ran)/fois fois, typ, lag1, lag2, PlusMinusDifference];
-Props(2,:) = [num, height, width, buff,ssiz, Background];
+Props(2,:) = [Sign, height, width, buff,ssiz, Background];
 
 Pos = get(gcf,'Position');
 set(gcf,'Position',Pos + [0 0 0 25]);
