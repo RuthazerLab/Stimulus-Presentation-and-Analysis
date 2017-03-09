@@ -410,9 +410,9 @@ function slider1_Callback(hObject, eventdata, handles)
 
 
 	% Update ROI list to only responding ROIs
-	if(handles.toggleValue == 1 || handles.toggleValue == 3)
-		handles = updateRoiList(hObject,eventdata,handles);
-	end
+	% if(handles.toggleValue == 1 || handles.toggleValue == 3)
+	% 	handles = updateRoiList(hObject,eventdata,handles);
+	% end
 
 
 function radiobutton1_Callback(hObject, eventdata, handles)
@@ -424,6 +424,8 @@ function radiobutton1_Callback(hObject, eventdata, handles)
 % Get unique state of the two radio buttons
 toggleValue = handles.radiobutton1.get('Value') + 2*handles.radiobutton2.get('Value');
 handles.pushbutton8.set('Visible','off');
+
+[RC TC] = size(handles.AnalysedData.dFF0);
 
 switch toggleValue
 
@@ -437,7 +439,11 @@ case 1
 
 	% Caluclates thresholded data at first instance and saves results
 	if(isempty(handles.cc))
-		c = propThresh(handles.AnalysedData.dFF0);
+		
+		c = zeros(RC,TC);
+		for j = 1:RC
+			c(j,:) = repmat(max(handles.RoiData(j).AutoCorrelation/1000-1,0),[1 TC]);
+		end
 		handles.cc = c;
 	else
 		c = handles.cc;
@@ -449,12 +455,12 @@ case 2
 	handles.pushbutton8.set('Visible','on');
 
 	% Sets colour to center to receptive field (yellow for lower and blue for higher verticle centers)
-	for i = 1:sum(handles.RoiCount)
+	for i = 1:RC
 		colour = getMiddle(handles.Responses,i,handles.StimulusData.Configuration);
 		c(i,1) = colour(2);
 	end
 
-	c = repmat(c,[1 length(handles.AnalysedData.Times)]);
+	c = repmat(c,[1 TC]);
 
 % Both Heatmap and Thresholding are selected
 case 3
@@ -462,15 +468,19 @@ case 3
 	handles.pushbutton8.set('Visible','on');
 
 	if(isempty(handles.cc))
-		c = propThresh(handles.AnalysedData.dFF0);
+		[a b] = size(handles.AnalysedData.dFF0);
+		c = zeros(a,b);
+		for j = 1:RC
+			c(j,:) = repmat(max(handles.RoiData(j).AutoCorrelation/1000-1,0),[1 b]);
+		end
 		handles.cc = c;
 	else
 		c = handles.cc;
 	end
 
-	for i = 1:sum(handles.RoiCount)
+	for i = 1:RC
 		colour = getMiddle(handles.Responses,i,handles.StimulusData.Configuration);
-		for j = 1:length(handles.AnalysedData.Times)
+		for j = 1:TC
 			if(c(i,j) > 0)
 				c(i,j) = colour(2);
 			end
@@ -503,6 +513,9 @@ function radiobutton2_Callback(hObject, eventdata, handles)
 toggleValue = handles.radiobutton1.get('Value') + 2*handles.radiobutton2.get('Value');
 handles.pushbutton8.set('Visible','off');
 
+[RC TC] = size(handles.AnalysedData.dFF0);
+
+
 switch toggleValue
 
 case 0
@@ -512,7 +525,11 @@ case 0
 case 1
 
 	if(isempty(handles.cc))
-		c = propThresh(handles.AnalysedData.dFF0);
+		[a b] = size(handles.AnalysedData.dFF0);
+		c = zeros(a,b);
+		for j = 1:RC
+			c(j,:) = repmat(max(handles.RoiData(j).AutoCorrelation/1000-1,0),[1 b]);
+		end
 		handles.cc = c;
 	else
 		c = handles.cc;
@@ -521,26 +538,30 @@ case 1
 case 2
 
 	handles.pushbutton8.set('Visible','on');
-	for i = 1:sum(handles.RoiCount)
+	for i = 1:RC
 		colour = getMiddle(handles.Responses,i,handles.StimulusData.Configuration);
 		c(i,1) = colour(handles.Response_Center+1);
 	end
 
-	c = repmat(c,[1 length(handles.AnalysedData.Times)]);
+	c = repmat(c,[1 TC]);
 
 case 3
 
 	handles.pushbutton8.set('Visible','on');
 	if(isempty(handles.cc))
-		c = propThresh(handles.AnalysedData.dFF0);
+		[a b] = size(handles.AnalysedData.dFF0);
+		c = zeros(a,b);
+		for j = 1:RC
+			c(j,:) = repmat(max(handles.RoiData(j).AutoCorrelation/1000-1,0),[1 b]);
+		end
 		handles.cc = c;
 	else
 		c = handles.cc;
 	end
 
-	for i = 1:sum(handles.RoiCount)
+	for i = 1:RC
 		colour = getMiddle(handles.Responses,i,handles.StimulusData.Configuration);
-		for j = 1:length(handles.AnalysedData.Times)
+		for j = 1:TC
 			if(c(i,j) > 0)
 				c(i,j) = colour(handles.Response_Center+1);
 			end

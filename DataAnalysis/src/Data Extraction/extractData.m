@@ -40,6 +40,7 @@ function header = extractData(Folder, ImageData)
       sendMail(email,'Analysis incomplete. ', msg);
     end
     disp(msg);
+    header = msg;
   end
 
   clearvars -except header;
@@ -56,6 +57,9 @@ function [header ImageData] = getTimeSeries(Folder)
   StepCount     = str2num(MetaData.ThorImageExperiment.ZStage.Attributes.steps);
   fps           = str2num(MetaData.ThorImageExperiment.LSM.Attributes.frameRate(1:5));
   FlyBackFrames = str2num(MetaData.ThorImageExperiment.Streaming.Attributes.flybackFrames);
+  xyScale       = str2num(MetaData.ThorImageExperiment.Camera.Attributes.pixelSizeUM);
+  zScale        = str2num(MetaData.ThorImageExperiment.ZStage.Attributes.StepSizeUM);
+  zStart        = str2num(MetaData.ThorImageExperiment.ZStage.Attributes.startPos);
 
   if(StepCount == 1)
     FlyBackFrames = 0;
@@ -90,10 +94,6 @@ function [header ImageData] = getTimeSeries(Folder)
     IJ.run('Morphological Filters', 'operation=[White Top Hat] element=Disk radius=6');
     imp = WindowManager.getCurrentImage;
     IJ.setAutoThreshold(imp,'Mean dark');
-    % IJ.run('Despeckle');
-    % IJ.run('Sharpen');
-    % IJ.run('Sharpen');
-    % IJ.setAutoThreshold(imp,'MinError dark');
     IJ.run('Convert to Mask');
     IJ.run('Watershed');
     IJ.run('Remove Outliers...', 'radius=4 threshold=50 which=Dark');
@@ -149,7 +149,9 @@ function [header ImageData] = getTimeSeries(Folder)
   % Removing "noisy" frames.
   excludeIndices = [];
 
-  header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', ImagesPerSlice, 'fps', fps, 'exInd', excludeIndices,'FlyBackFrames',FlyBackFrames,'ImageWidth',ImageWidth,'ImageHeight',ImageHeight);
+  header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', ...
+    ImagesPerSlice, 'fps', fps, 'exInd', excludeIndices,'FlyBackFrames',FlyBackFrames, ...
+    'ImageWidth',ImageWidth,'ImageHeight',ImageHeight,'xyScale',xyScale,'zScale',zScale,'zStart',zStart);
   save(fullfile(Folder,fileName), 'header', 'ImageData');
 
 end
@@ -160,6 +162,12 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   Folder = header.DataPath;
   filename = header.FileName;
   datafile = [Folder '\Analysed ' filename];
+
+  % Parameters
+
+  tau0 = 0.2;   % Denoising parameter
+  AvgFrame = 7; % Number of frames before and after point for average
+  WhitenessThreshold = 1000;
 
   % Read StimulusTimes.txt and StimulusConfig.txt. If no config file
   % use default values.
@@ -198,14 +206,14 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   m = ceil((Config.RestLength+Config.DisplayLength)*header.fps); % Frame range for autocorrelation
   [RoiData RoiCoordinates] = getRoiData(ImageData, m);
 
+  for i = 1:length(RoiData)
+    temp(i) = RoiData(i).AutoCorrelation;
+  end
+  temp = find(temp > WhitenessThreshold);
+
+
 
   % Normalize data with percent above baseline
-  try
-    load('Parameters.mat');
-  catch
-    tau0 = 0.2;   % Denoising parameter
-    AvgFrame = 7; % Number of frames before and after point for average
-  end
   BaseLineCount = ceil(Config.RestLength*header.fps);  % Number of data points for baseline
   difF = deltaF_overF(RoiData,tau0, AvgFrame, BaseLineCount);
 
@@ -221,7 +229,9 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   StimulusData = struct('Raw',RawStimulusData,'Times',StimulusTimes,'Configuration',Config);
   header = struct('FileName',['Analysed ' filename], 'RoiCount', length(RoiData), 'StimuliCount', ...
     length(StimulusTimes),'TimeLapse', TimeLapse, 'FPS', header.fps, 'Frames', ...
-    header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight',header.ImageHeight, 'FlyBackFrames', header.FlyBackFrames,'AutoCorrFrames',m);
+    header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight', ...
+    header.ImageHeight, 'xyScale',header.xyScale, 'zScale',header.zScale, 'zStart',header.zStart, ...
+    'FlyBackFrames', header.FlyBackFrames,'AutoCorrFrames',m,'Responsive',temp);
 
   % Add cross correlation results to StimulusData
 

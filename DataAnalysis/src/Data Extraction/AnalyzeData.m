@@ -109,37 +109,44 @@ for i = 1:length(handles.Folders)
 
 	waitbar(i/length(handles.Folders),h,FolderName);
 
+	Error = {};
+
 
 	if(~exist(fullfile(handles.Folders{i},'Episode001.h5')))
-		disp([FolderName ' is missing Episode001.h5']);
+		Error{end+1} = [FolderName ' is missing Episode001.h5'];
 		Correct = 0;
 	end
 	if(~exist(fullfile(handles.Folders{i},'Experiment.xml')))
-		disp([FolderName ' is missing Experiment.xml']);
+		Error{end+1} = [FolderName ' is missing Experiment.xml'];
 		Correct = 0;
 	end
 	if(~exist(fullfile(handles.Folders{i},'Image_0001_0001.raw')))
-		disp([FolderName ' is missing Image_0001_0001.raw']);
+		Error{end+1} = [FolderName ' is missing Image_0001_0001.raw'];
 		Correct = 0;
 	end
 	if(~exist(fullfile(handles.Folders{i},'StimulusConfig.txt')))
-		disp([FolderName ' is missing StimulusConfig.txt']);
+		Error{end+1} = [FolderName ' is missing StimulusConfig.txt'];
 		Correct = 0;
 	end
 	if(~exist(fullfile(handles.Folders{i},'StimulusTimes.txt')))
-		disp([FolderName ' is missing StimulusTimes.txt']);
+		Error{end+1} = [FolderName ' is missing StimulusTimes.txt'];
 		Correct = 0;
 	end
 	if(~exist(fullfile(handles.Folders{i},'ThorRealTimeDataSettings.xml')))
-		disp([FolderName ' is missing ThorRealTimeDataSettings.xml']);
+		Error{end+1} = [FolderName ' is missing ThorRealTimeDataSettings.xml'];
 		Correct = 0;
+	end
+	if(exist(fullfile(handles.Folders{i},['Analysed ' FolderName '.mat'])))
+		continue;
 	end
 	if(Correct)
 		try
-			extractData(handles.Folders{i});
+			Error{1} = extractData(handles.Folders{i});
 		catch
-			disp(['An error occured while analyzing ' FolderName]);
+			HelpBox({['An error occured while analyzing ' FolderName],Error{1}});
 		end
+	else
+		HelpBox(Error);
 	end
 end
 		

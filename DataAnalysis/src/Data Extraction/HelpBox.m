@@ -54,6 +54,10 @@ function HelpBox_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for HelpBox
 handles.output = hObject;
+if(nargin == 4)
+  set(handles.text2,'String',varargin{1});
+end
+
 
 FigPos=get(0,'DefaultFigurePosition');
 OldUnits = get(hObject, 'Units');
