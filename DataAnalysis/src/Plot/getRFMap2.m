@@ -68,8 +68,8 @@ case 6  % Bars
 
 	imagesc((Q-control)./std(StimulusData.Responses(2:end,Roi))); title(['Roi ' int2str(Roi) ' responses']); axis square;  
 
-	CLim = get(gca,'Clim'); 
-	set(gca,'CLim',[0 3]);
+	% CLim = get(gca,'Clim'); 
+	% set(gca,'CLim',[0 3]);
 
 	% Sets colour axis from absolution value of lower percent to upper percent,
 	% to get some measure of normal variance in brightness
