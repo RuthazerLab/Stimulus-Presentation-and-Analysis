@@ -1,4 +1,4 @@
-function [RoiData RoiCoordinates] = getRoiData(ImageData,m);
+function [RoiData RoiCoordinates] = getRoiData(ImageData);
 
 % Reformats data into structure RoiData
 
@@ -15,5 +15,5 @@ Data = cell2mat(Data);
 
 
 for i = 1:length(Co)
-	RoiData(i) = struct('Brightness', Data(:,i), 'Coordinates', Co(:,i),'AutoCorrelation',whiteness_test(Data(:,i)',m));
+	RoiData(i) = struct('Brightness', Data(:,i), 'Coordinates', Co(:,i));
 end

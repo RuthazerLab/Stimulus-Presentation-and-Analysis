@@ -342,13 +342,13 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-fid = fopen('test.txt','w');
-if(fid > 0)
-  fclose(fid);
-else
-  disp('No read/write permssion. Please select a different folder.');
-  return;
-end
+% fid = fopen('test.txt','w');
+% if(fid > 0)
+%   fclose(fid);
+% else
+%   disp('No read/write permssion. Please select a different folder.');
+%   return;
+% end
 
 
 handles.height = str2num(handles.edit8.String);   % Height of images

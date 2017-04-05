@@ -57,8 +57,8 @@ function [header ImageData] = getTimeSeries(Folder)
   StepCount     = str2num(MetaData.ThorImageExperiment.ZStage.Attributes.steps);
   fps           = str2num(MetaData.ThorImageExperiment.LSM.Attributes.frameRate(1:5));
   FlyBackFrames = str2num(MetaData.ThorImageExperiment.Streaming.Attributes.flybackFrames);
-  xyScale       = str2num(MetaData.ThorImageExperiment.Camera.Attributes.pixelSizeUM);
-  zScale        = str2num(MetaData.ThorImageExperiment.ZStage.Attributes.StepSizeUM);
+  fieldSize     = str2num(MetaData.ThorImageExperiment.LSM.Attributes.fieldSize);
+  zScale        = str2num(MetaData.ThorImageExperiment.ZStage.Attributes.stepSizeUM);
   zStart        = str2num(MetaData.ThorImageExperiment.ZStage.Attributes.startPos);
 
   if(StepCount == 1)
@@ -151,7 +151,7 @@ function [header ImageData] = getTimeSeries(Folder)
 
   header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', ...
     ImagesPerSlice, 'fps', fps, 'exInd', excludeIndices,'FlyBackFrames',FlyBackFrames, ...
-    'ImageWidth',ImageWidth,'ImageHeight',ImageHeight,'xyScale',xyScale,'zScale',zScale,'zStart',zStart);
+    'ImageWidth',ImageWidth,'ImageHeight',ImageHeight,'fieldSize',fieldSize,'zScale',zScale,'zStart',zStart);
   save(fullfile(Folder,fileName), 'header', 'ImageData');
 
 end
@@ -203,13 +203,7 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   TimeLapse = frameTime(end);
 
   % Reorient data to ROI-oriented structure
-  m = ceil((Config.RestLength+Config.DisplayLength)*header.fps); % Frame range for autocorrelation
-  [RoiData RoiCoordinates] = getRoiData(ImageData, m);
-
-  for i = 1:length(RoiData)
-    temp(i) = RoiData(i).AutoCorrelation;
-  end
-  temp = find(temp > WhitenessThreshold);
+  [RoiData RoiCoordinates] = getRoiData(ImageData);
 
 
 
@@ -230,13 +224,21 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   header = struct('FileName',['Analysed ' filename], 'RoiCount', length(RoiData), 'StimuliCount', ...
     length(StimulusTimes),'TimeLapse', TimeLapse, 'FPS', header.fps, 'Frames', ...
     header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight', ...
-    header.ImageHeight, 'xyScale',header.xyScale, 'zScale',header.zScale, 'zStart',header.zStart, ...
-    'FlyBackFrames', header.FlyBackFrames,'AutoCorrFrames',m,'Responsive',temp);
+    header.ImageHeight, 'fieldSize',header.fieldSize, 'zScale',header.zScale, 'zStart',header.zStart, ...
+    'FlyBackFrames', header.FlyBackFrames);
 
-  % Add cross correlation results to StimulusData
+
 
   try
     getXCor;
+
+    for i = 1:length(RoiData)
+      for j = 1:(StimulusData.Configuration.StimuliCount-1)
+        [h p(i,j) ci stats] = ttest2(RoiData(i).XCor(1,:),RoiData(i).XCor(1+j,:));
+      end
+    end
+    AnalysedData.pValues = p;
+
 
     correlated = true;
     for i = 1:length(RoiData)
@@ -248,12 +250,11 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
 
       elseif(StimulusData.Configuration.Type == 6)
         siz = (StimulusData.Configuration.StimuliCount-1)/2;
-        T = StimulusData.Responses(2:end,i);
         Q = ones(siz,siz);
 
         for j = 1:siz
-          Q(j,:) = Q(j,:).*repmat(T(j),[1 siz]);
-          Q(:,j) = Q(:,j).*repmat(T(j+siz),[siz 1]);
+          Q(j,:) = Q(j,:).*repmat(1-AnalysedData.pValues(i,j),[1 siz]);
+          Q(:,j) = Q(:,j).*repmat(1-AnalysedData.pValues(i,j+siz),[siz 1]);
         end
         
         RoiData(i).RF = Q;
@@ -263,13 +264,12 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
       Y = []; X = [];
       for a = 1:siz
         for b = 1:siz
-          X(end+1:end+floor(Z(a,b)*1000)) = a;
-          Y(end+1:end+floor(Z(a,b)*1000)) = b;
+          X(end+1:end+max(floor(Z(a,b)*1000),1)) = a;
+          Y(end+1:end+max(floor(Z(a,b)*1000),1)) = b;
         end
       end
       Z = [X' Y'];
       RoiData(i).RFmu = mean(Z); RoiData(i).RFsigma = cov(Z);
-
     end
   catch
     Error = lasterror;
