@@ -24,9 +24,7 @@ for i = 1:ImagesPerSlice*(Step+FlyBackFrames)
       	continue;
     end
 
-    Slice = b;
-
-	List(:,:,Slice) = List(:,:,Slice) + fread(fid,[1 ImageSize],'uint16');
+	List(:,:,b) = List(:,:,b) + fread(fid,[1 ImageSize],'uint16');
 
 	waitbar(i/(ImagesPerSlice*(Step+FlyBackFrames)),h,[int2str(i) '/' int2str(ImagesPerSlice*(Step+FlyBackFrames))]);
 

@@ -268,7 +268,7 @@ function listbox1_Callback(hObject, eventdata, handles)
 	end
 
 	% Resets second listbox selects to 'All ROIs'
-	handles.listbox2.set('Value',1);
+	% handles.listbox2.set('Value',1);
 
 	% Update the time for presented data.
 	updateTime(hObject,eventdata,handles);
@@ -329,7 +329,7 @@ function listbox2_Callback(hObject, eventdata, handles)
 		% If you have heatmap on, plot receptivity field instead of dFF0 data
 		if(handles.toggleValue == 2 || handles.toggleValue == 3)
 			try
-				getRFMap2(n,handles.StimulusData,handles.StimulusData.Configuration);
+				getRFMap(n,handles.RoiData,handles.StimulusData.Configuration);
 				ax = gca;
 			catch
 				msgbox('No response data!','HeatMapError','modal');
@@ -439,10 +439,9 @@ case 1
 
 	% Caluclates thresholded data at first instance and saves results
 	if(isempty(handles.cc))
-		
-		c = zeros(RC,TC);
-		for j = 1:RC
-			c(j,:) = repmat(max(handles.RoiData(j).AutoCorrelation/1000-1,0),[1 TC]);
+
+		for i = 1:RC
+			c(i,:) = repmat(1-min(handles.AnalysedData.pValues(i,:)),[1 TC]);
 		end
 		handles.cc = c;
 	else
@@ -456,8 +455,12 @@ case 2
 
 	% Sets colour to center to receptive field (yellow for lower and blue for higher verticle centers)
 	for i = 1:RC
-		colour = getMiddle(handles.Responses,i,handles.StimulusData.Configuration);
-		c(i,1) = colour(2);
+		colour = handles.RoiData(i).RFmu;
+		try
+			c(i,1) = colour(handles.Response_Center+1);
+		catch
+			c(i,1) = 0;
+		end
 	end
 
 	c = repmat(c,[1 TC]);
@@ -468,24 +471,27 @@ case 3
 	handles.pushbutton8.set('Visible','on');
 
 	if(isempty(handles.cc))
-		[a b] = size(handles.AnalysedData.dFF0);
-		c = zeros(a,b);
-		for j = 1:RC
-			c(j,:) = repmat(max(handles.RoiData(j).AutoCorrelation/1000-1,0),[1 b]);
+		for i = 1:RC
+			c(i,:) = repmat(1-min(handles.AnalysedData.pValues(i,:)),[1 TC]);
 		end
-		handles.cc = c;
 	else
 		c = handles.cc;
 	end
 
 	for i = 1:RC
-		colour = getMiddle(handles.Responses,i,handles.StimulusData.Configuration);
+		colour = handles.RoiData(i).RFmu;
 		for j = 1:TC
-			if(c(i,j) > 0)
-				c(i,j) = colour(2);
+			if(c(i,j) > 0.99)
+				try
+
+					c(i,j) = colour(handles.Response_Center+1);
+				catch
+					c(i,j) = 0;
+				end
 			end
 		end
 	end
+	disp(handles.Response_Center+1);
 
 end
 
@@ -525,12 +531,9 @@ case 0
 case 1
 
 	if(isempty(handles.cc))
-		[a b] = size(handles.AnalysedData.dFF0);
-		c = zeros(a,b);
-		for j = 1:RC
-			c(j,:) = repmat(max(handles.RoiData(j).AutoCorrelation/1000-1,0),[1 b]);
+		for i = 1:RC
+			c(i,:) = repmat(1-min(handles.AnalysedData.pValues(i,:)),[1 TC]);
 		end
-		handles.cc = c;
 	else
 		c = handles.cc;
 	end
@@ -539,9 +542,15 @@ case 2
 
 	handles.pushbutton8.set('Visible','on');
 	for i = 1:RC
-		colour = getMiddle(handles.Responses,i,handles.StimulusData.Configuration);
-		c(i,1) = colour(handles.Response_Center+1);
+		colour = handles.RoiData(i).RFmu;
+		try
+			
+			c(i,1) = colour(handles.Response_Center+1);
+		catch
+			c(i,1) = 0;
+		end
 	end
+	disp(handles.Response_Center+1);
 
 	c = repmat(c,[1 TC]);
 
@@ -549,10 +558,8 @@ case 3
 
 	handles.pushbutton8.set('Visible','on');
 	if(isempty(handles.cc))
-		[a b] = size(handles.AnalysedData.dFF0);
-		c = zeros(a,b);
-		for j = 1:RC
-			c(j,:) = repmat(max(handles.RoiData(j).AutoCorrelation/1000-1,0),[1 b]);
+		for i = 1:RC
+			c(i,:) = repmat(1-min(handles.AnalysedData.pValues(i,:)),[1 TC]);
 		end
 		handles.cc = c;
 	else
@@ -560,13 +567,19 @@ case 3
 	end
 
 	for i = 1:RC
-		colour = getMiddle(handles.Responses,i,handles.StimulusData.Configuration);
+		colour = handles.RoiData(i).RFmu;
 		for j = 1:TC
-			if(c(i,j) > 0)
-				c(i,j) = colour(handles.Response_Center+1);
+			if(c(i,j) > 0.99)
+				try
+					
+					c(i,j) = colour(handles.Response_Center+1);
+				catch
+					c(i,j) = 0;
+				end
 			end
 		end
 	end
+	disp(handles.Response_Center+1);
 
 end
 
@@ -604,7 +617,7 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-Label_Options = {'Verticle','Horizontal'};
+Label_Options = {'Horizontal','Vertical'};
 
 handles.Response_Center = mod(handles.Response_Center+1,2);
 
@@ -667,7 +680,7 @@ set(0,'CurrentFigure',handles.fig);
 
 if(handles.toggleValue == 2 || handles.toggleValue == 3)
 	try
-		getRFMap2(n,handles.StimulusData,handles.StimulusData.Configuration);
+		getRFMap(n,handles.RoiData,handles.StimulusData.Configuration);
 		colorbar;
 		ax = gca;
 	catch
@@ -689,6 +702,7 @@ else
 	h = zoom;
 	h.motion = 'horizontal';
 end
+
 
 guidata(hObject,handles);
 catch

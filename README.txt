@@ -48,6 +48,10 @@
 		FPS				Capture speed
 		Frames			Number of frames recorded
 		Slices			Number of slices recorded
+		ImageWidth		Horizontal pixel resolution
+		ImageHeight		Vertical pixel resolution
+		FlyBackFrames	Number of flyback frames
+		AutoCorrFrames	Neighbourhood size in autocorrelation
 
 	AnalysedData.
 		Times 			Time of each frame for each ROI
@@ -59,6 +63,10 @@
 		Coordinates 	Coordinates of Roi n
 		AutoCorrelation	Coefficient to determine responsiveness/whiteness of signal
 		XCor			Average response of ROI to each stimulus
+		ControlResponse	Signal during control presentation of blank screen
+		RF				Grid of reshaped XCor data
+		RFmu			Center of RF (assuming normal distribution)
+		RFsigma			Variance in RF (assuming normal distribution)
 
 	StimulusData.
 		Raw 			3 x n matrix. First column is simply the

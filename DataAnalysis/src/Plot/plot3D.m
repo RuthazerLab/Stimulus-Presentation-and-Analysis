@@ -27,7 +27,7 @@ end
 % two sets: respnding and not responding
 if(handles.toggleValue == 1 || handles.toggleValue == 3)
 
-	L = c(t,:) > 0;
+	L = c(t,:) > 0.99;
 
 	x2 = x(~L);
 	y2 = y(~L);
@@ -54,7 +54,8 @@ if(length(c) > 0)
 	if(length(c(t,:)) == 3)
 		x(end+1) = x(end); y(end+1) = y(end); z(end+1) = z(end); c(t,end+1) = c(t,end);
 	end	
-	handles.axes1 = scatter3(x,y,z,30,c(t,:),'filled'); hold on;
+	figure(1);
+	scatter3(x,y,z,30,c(t,:),'filled'); hold on;
 
 else
 
@@ -68,8 +69,29 @@ end
 
 hold off;
 set(gca,'ZDIR','reverse');
+axis([0 512 0 512 1 handles.RoiData(length(handles.RoiData)).Coordinates(3)]); 
+set(get(gca,'ZAxis'),'TickValues',[1:handles.RoiData(length(handles.RoiData)).Coordinates(3)])
+set(get(gca,'XAxis'),'TickValues',[0:512/4:512]);
+set(get(gca,'YAxis'),'TickValues',[0:512/4:512]);
+set(get(gca,'XAxis'),'TickLabels',{0:20:80});
+set(get(gca,'YAxis'),'TickLabels',{0:20:80});
+
 try
-	axis([0 handles.header.ImageWidth 0 handles.header.ImageHeight 0 handles.RoiData(length(handles.RoiData)).Coordinates(3)]); 
+
+	% xlabel = get(gca,'XTickLabel');
+	% ylabel = get(gca,'YTickLabel');
+	% zlabel = get(gca,'ZTickLabel');
+	% for i = 1:length(xlabel)
+	% 	newxlabel{i} = round(str2num(xlabel{i})*handles.header.fieldSize/512,0);
+	% 	newylabel{i} = round(str2num(ylabel{i})*handles.header.fieldSize/512,0);
+	% end
+	% for i = 1:length(zlabel)
+	% 	newzlabel{i} = handles.header.zStart*1000+(i-1)*handles.header.zScale;
+	% end
+	% set(gca,'ZTickLabel',newzlabel);
+	% set(gca,'XTickLabel',newxlabel);
+	% set(gca,'YTickLabel',newylabel);
+	% axis ij;
 catch
 	axis([0 512 0 512 0 handles.RoiData(length(handles.RoiData)).Coordinates(3)]); 
 end
@@ -77,9 +99,16 @@ axis ij; set(gca,'view',handles.prevView);
 
 colormap('default')
 
-% Changes axis limits to reflect number of times stimulus was presented (Change to nonstatic)
+
+if(handles.toggleValue == 1)
+	set(gca,'CLim',[0.99 1]);
+end
+
 if(handles.toggleValue == 2 || handles.toggleValue == 3)
-	ax.CLim = [1 5];
-else
-	ax.CLim = [mean(prctile(c,10)) mean(prctile(c,90))];
+	for i = 1:length(handles.RoiData)
+		Center(i,:) = handles.RoiData(i).RFmu;
+	end
+	m = mean(Center(~isnan(Center(:,handles.Response_Center+1)),handles.Response_Center+1));
+	s = std(Center(~isnan(Center(:,handles.Response_Center+1)),handles.Response_Center+1));
+	set(gca,'CLim',[m-2*s m+2*s]);
 end

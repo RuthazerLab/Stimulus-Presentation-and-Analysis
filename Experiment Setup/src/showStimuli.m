@@ -6,7 +6,8 @@ try
   s = daq.createSession('ni');
   addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
   Triggered = 1;
-catch
+catch Last_Error
+  disp(getReport(Last_Error));
   Triggered = 0;
 end
 
@@ -126,7 +127,7 @@ case 6  % Displays bars, overlap for ROI detection.
   conversion = @(i,num) i;
   randomFunction = @randomOrder;
 
-  % Load stimuli into matrix
+  % Load stimuli into matrix. Top Bottom Left Right
   for j = 0:1
     for i = 1:num
       I(:,:,i+num*j) = RoiBars({i, ssiz, num, height, width, buff, Sign, Background, PlusMinusDifference, j});
@@ -190,6 +191,7 @@ pause(1);
 if(Triggered)
   outputSingleScan(s,0);
 end
+
 Props(1,:) = [length(ran)/fois fois, typ, lag1, lag2, PlusMinusDifference];
 Props(2,:) = [Sign, height, width, buff,ssiz, Background];
 

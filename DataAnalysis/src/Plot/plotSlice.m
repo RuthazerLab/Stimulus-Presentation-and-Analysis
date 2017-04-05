@@ -25,17 +25,17 @@ end
 % If there is a single ROI selected, all other values are zeroed
 if(Single_Roi)
 	n = handles.n;
-	% if(handles.toggleValue == 0)
-		c(:,:) = 0;
-	% end
-	c(:,n) = Inf;
+	CC = c(1,n);
+	c(:,n) = 0;
+	X = x;
+	Y = y;
+	Z = y;
 end
 
 % If threshold view is selected, coordiates are divided into 
 % two sets: respnding and not responding
 if(handles.toggleValue == 1 || handles.toggleValue == 3)
-
-	L = c(t,:) > 0;
+	L = c(t,:) > 0.99;
 
 	% ROIs that both respond and are in selected slice
 	for i = 1:length(L)
@@ -61,18 +61,6 @@ else
 	c = c(:,S);
 end
 
-% try
-% 	% I = imread('Averaged Image.tif');
-% 	% imshow(I,'Parent',handles.axes1); hold on;
-% 	% CLim = get(gca,'CLim');
-% 	if(~Single_Roi)
-% 		c(t,:) = c(t,:) * CLim(2) / 1.5;
-% 	end
-% 	Background_Image = false;
-% catch
-% 	Background_Image = false;
-% end
-
 
 % Plots two sets of coordinates with colour values.
 if(length(c(t,:)) > 0)
@@ -81,26 +69,41 @@ if(length(c(t,:)) > 0)
 	if(length(c(t,:)) == 3)
 		x(end+1) = x(end); y(end+1) = y(end); c(t,end+1) = c(t,end);
 	end
-	% handles.axes1 = 
+	if(Single_Roi)
+		scatter(X(n),Y(n),100,CC,'filled','d');
+	end
 	scatter(x,y,50,c(t,:),'filled'); hold on;
+	
 else
 
-	% handles.axes1 = 
 	scatter(1,1,0.1,1,'filled'); hold on;
 
 end
 
 if(handles.toggleValue == 1 || handles.toggleValue == 3)
-	% handles.axes1 = 
+	if(Single_Roi)
+		scatter(X(n),Y(n),100,CC,'filled','d');
+	end
 	scatter(x2,y2,5,c2(t,:),'filled');
+
 end
 
 hold off;
 
+axis([0 handles.header.ImageWidth 0 handles.header.ImageHeight]); axis ij;
+
 try
-	axis([0 handles.header.ImageWidth 0 handles.header.ImageHeight]); axis ij;
+	% xlabel = get(gca,'XTickLabel');
+	% ylabel = get(gca,'YTickLabel');
+	% for i = 1:length(xlabel)
+	% 	newxlabel{i} = round(str2num(xlabel{i})*handles.header.fieldSize/512);
+	% 	newylabel{i} = round(str2num(ylabel{i})*handles.header.fieldSize/512);
+	% end
+	% set(gca,'XTickLabel',newxlabel);
+	% set(gca,'YTickLabel',newylabel);
+	% axis ij;
 catch
-	axis([0 512 0 512]); axis ij;
+	
 end
 
 if(Single_Roi || handles.toggleValue ~= 2 && handles.toggleValue ~= 3)
@@ -112,13 +115,17 @@ else
 	colormap parula;
 end
 
-	
+if(handles.toggleValue == 1)
+	set(gca,'CLim',[0.99 1]);
+end
 
-% Changes axis limits to reflect number of times stimulus was presented (Change to nonstatic)
 if(handles.toggleValue == 2 || handles.toggleValue == 3)
-	ax.CLim = [0 5];
-else
-	ax.Clim = [0 1.5];
+	for i = 1:length(handles.RoiData)
+		Center(i,:) = handles.RoiData(i).RFmu;
+	end
+	m = mean(Center(~isnan(Center(:,handles.Response_Center+1)),handles.Response_Center+1));
+	s = std(Center(~isnan(Center(:,handles.Response_Center+1)),handles.Response_Center+1));
+	set(gca,'CLim',[m-2*s m+2*s]);
 end
 
 t = getframe();
