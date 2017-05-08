@@ -447,7 +447,6 @@ guidata(hObject,handles);
 % Present stimuli
 % data = stimulusFull(hObject, variables, handles);
 [data shade] = showStimuli(hObject, variables, handles);
-disp(data);
 
 height = handles.height;
 width = handles.width;
