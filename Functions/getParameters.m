@@ -6,7 +6,7 @@ function Data = getParameters(File)
 
     for i = 1:length(RoiData)
       for j = 1:(StimulusData.Configuration.StimuliCount-1)
-        [h p(i,j) ci stats] = ttest2(RoiData(i).XCor(1,:),RoiData(i).XCor(1+j,:));
+        [h p(i,j) ci stats] = ttest2(RoiData(i).XCor(1,:),RoiData(i).XCor(1+j,:),'tail','left');
       end
     end
     AnalysedData.pValues = p;
@@ -29,6 +29,7 @@ function Data = getParameters(File)
           Q(j,:) = Q(j,:).*repmat(p(j),[1 siz]);
           Q(:,j) = Q(:,j).*repmat(p(j+siz),[siz 1]);
         end
+        RoiData(i).RF = Q;
       end
 
       Z = RoiData(i).RF;

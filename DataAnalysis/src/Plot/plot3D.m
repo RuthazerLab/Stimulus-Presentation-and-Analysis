@@ -54,7 +54,6 @@ if(length(c) > 0)
 	if(length(c(t,:)) == 3)
 		x(end+1) = x(end); y(end+1) = y(end); z(end+1) = z(end); c(t,end+1) = c(t,end);
 	end	
-	figure(1);
 	scatter3(x,y,z,30,c(t,:),'filled'); hold on;
 
 else

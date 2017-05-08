@@ -5,6 +5,37 @@ function header = extractData(Folder, ImageData)
 % 
 % 
 
+  abort = 0;
+
+  if(~exist(fullfile(Folder,'Episode001.h5')))
+    disp([Folder ' is missing Episode001.h5']);
+    abort = 1;
+  end
+  if(~exist(fullfile(Folder,'Experiment.xml')))
+    disp([Folder ' is missing Experiment.xml']);
+    abort = 1;
+  end
+  if(~exist(fullfile(Folder,'Image_0001_0001.raw')))
+    disp([Folder ' is missing Image_0001_0001.raw']);
+    abort = 1;
+  end
+  if(~exist(fullfile(Folder,'StimulusConfig.txt')))
+    disp([Folder ' is missing StimulusConfig.txt']);
+    abort = 1;
+  end
+  if(~exist(fullfile(Folder,'StimulusTimes.txt')))
+    disp([Folder ' is missing StimulusTimes.txt']);
+    abort = 1;
+  end
+  if(~exist(fullfile(Folder,'ThorRealTimeDataSettings.xml')))
+    disp([Folder ' is missing ThorRealTimeDataSettings.xml']);
+    abort = 1;
+  end
+
+  if(abort)
+    return;
+  end
+
   email = 'brakeniklas@gmail.com';
   reply = 'N'; %input('Email when done? Y/N [Y]:','s');
 
@@ -14,18 +45,20 @@ function header = extractData(Folder, ImageData)
 
     switch nargin
 
-    case 1
-        %% Extract data from .raw file in Folder
+    case 1  % Analyse raw data
+
         [header1 ImageData] = getTimeSeries(Folder);
-        
-        %% Analyse data from ImageData 
         [header correlated] = analyseTimeSeries(header1, ImageData);
-    case 2
-        %% Analyse data from ImageData 
+
+    case 2  % Analyse data from ImageData
+
         [header correlated] = analyseTimeSeries(Folder, ImageData);
+
     otherwise
+
       ME = MException('MATLAB:actionNotTaken','Invalid number of input arguments.');
       throw(ME);
+
     end
 
     if isempty(reply)
@@ -49,6 +82,15 @@ end
 
 function [header ImageData] = getTimeSeries(Folder)
 
+  % Add ImageJ library to JAVACLASSPATH
+  try
+      Miji(false);
+  catch
+      disp('Fiji\scripts is not on your path. Please add to your path, or run installFiji.')
+      return;
+  end
+  import ij.*
+
   % Extract experiment data from Experiment.xml file
   MetaData      = xml2struct(fullfile(Folder,'Experiment.xml'));
   ImageWidth    = str2num(MetaData.ThorImageExperiment.LSM.Attributes.pixelX);
@@ -71,10 +113,6 @@ function [header ImageData] = getTimeSeries(Folder)
 
   % Get projected Images for each slice
   Average_Images = zProj3(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
-
-  % Add ImageJ library to JAVACLASSPATH
-  Miji(false);
-  import ij.*
 
   % Loop through each slice
   for Slice = 1:StepCount

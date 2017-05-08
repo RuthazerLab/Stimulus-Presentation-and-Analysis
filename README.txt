@@ -1,3 +1,6 @@
+** Must download Fiji (https://fiji.sc/) and add to your path
+		Fiji.app\scripts
+
 (1) RunExperiment
 		- Select folder
 		- Adjust settings

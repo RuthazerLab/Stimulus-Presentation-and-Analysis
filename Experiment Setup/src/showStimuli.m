@@ -231,6 +231,11 @@ end
 
 end
 
+disp('StimulusTimes: ');
+disp(data);
+disp('StimulusConfig: ');
+disp(Props);
+
 
 %% Saves Data as StimulusTimes.txt and properties as StimulusConfig.txt
 
