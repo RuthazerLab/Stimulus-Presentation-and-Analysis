@@ -491,7 +491,6 @@ case 3
 			end
 		end
 	end
-	disp(handles.Response_Center+1);
 
 end
 
@@ -550,7 +549,6 @@ case 2
 			c(i,1) = 0;
 		end
 	end
-	disp(handles.Response_Center+1);
 
 	c = repmat(c,[1 TC]);
 
@@ -579,7 +577,6 @@ case 3
 			end
 		end
 	end
-	disp(handles.Response_Center+1);
 
 end
 

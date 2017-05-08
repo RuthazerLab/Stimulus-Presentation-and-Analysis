@@ -1,5 +1,7 @@
 function installFiji
 
+SoftwareFolder = fileparts(fileparts(mfilename('fullpath')));
+
 disp('For Windows 64-bit, enter 1.');
 disp('For MacOS, enter 2. ');
 OS = input('-----> ');

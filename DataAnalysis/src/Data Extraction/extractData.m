@@ -36,11 +36,6 @@ function header = extractData(Folder, ImageData)
     return;
   end
 
-  email = 'brakeniklas@gmail.com';
-  reply = 'N'; %input('Email when done? Y/N [Y]:','s');
-
-  tic;
-  
   try
 
     switch nargin
@@ -61,22 +56,14 @@ function header = extractData(Folder, ImageData)
 
     end
 
-    if isempty(reply)
-      sendMail(email,'Analysis is complete!', [header.FileName, ' was analysed in ', int2str(round(toc/6)/10), ' minutes. Correlated = ' int2str(correlated)]);
-    end
 
   catch Last_Error
 
     msg = getReport(Last_Error);
-
-    if isempty(reply)
-      sendMail(email,'Analysis incomplete. ', msg);
-    end
     disp(msg);
     header = msg;
-  end
 
-  clearvars -except header;
+  end
 
 end
 
@@ -276,6 +263,7 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
       end
     end
     AnalysedData.pValues = p;
+    AnalysedData.Responsive = 1 - min(AnalysedData.pValues');
 
 
     correlated = true;
@@ -308,11 +296,23 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
       end
       Z = [X' Y'];
       RoiData(i).RFmu = mean(Z); RoiData(i).RFsigma = cov(Z);
+
+      CenterPosition(i,:) = [RoiData(i).RFmu];
+      CenterVariance(i,:) = [RoiData(i).RFsigma(1,1) RoiData(i).RFsigma(2,2)];
+
     end
   catch
     Error = lasterror;
     disp('An error occured in correlation-related computation.');
   end
+
+  data = [header.RoiCount;
+          sum(AnalysedData.Responsive > 0.99);
+          sum(AnalysedData.Responsive > 0.99)/header.RoiCount;
+          std(CenterPosition(AnalysedData.Responsive > 0.99,1));
+          std(CenterPosition(AnalysedData.Responsive > 0.99,2));
+          mean(CenterVariance(AnalysedData.Responsive > 0.99,1));
+          mean(CenterVariance(AnalysedData.Responsive > 0.99,2)); ]
 
   % Save final analysed data
   save(datafile, 'header','AnalysedData','StimulusData','RoiData');
