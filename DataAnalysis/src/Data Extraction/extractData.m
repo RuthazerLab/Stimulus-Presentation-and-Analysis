@@ -40,14 +40,16 @@ function header = extractData(Folder, ImageData)
 
     switch nargin
 
-    case 1  % Analyse raw data
+    case 0  % Analyse raw data
 
-        [header1 ImageData] = getTimeSeries(Folder);
-        [header correlated] = analyseTimeSeries(header1, ImageData);
+      Folder = uigetdir('Data Folder');
+
+      [header1 ImageData] = getTimeSeries(Folder);
+      [header correlated] = analyseTimeSeries(header1, ImageData);
 
     case 2  % Analyse data from ImageData
 
-        [header correlated] = analyseTimeSeries(Folder, ImageData);
+      [header correlated] = analyseTimeSeries(Folder, ImageData);
 
     otherwise
 
@@ -70,13 +72,12 @@ end
 function [header ImageData] = getTimeSeries(Folder)
 
   % Add ImageJ library to JAVACLASSPATH
-  try
-      Miji(false);
-  catch
-      disp('Fiji\scripts is not on your path. Please add to your path, or run installFiji.')
-      return;
-  end
-  import ij.*
+  javaaddpath('MorphoLibJ_-1.3.1.jar');
+  javaaddpath('ij-1.51n.jar');
+  import ij.*;
+  import ij.process.*;
+  import inra.ijpb.morphology.strel.DiskStrel;
+  import inra.ijpb.morphology.Morphology;
 
   % Extract experiment data from Experiment.xml file
   MetaData      = xml2struct(fullfile(Folder,'Experiment.xml'));
@@ -116,8 +117,8 @@ function [header ImageData] = getTimeSeries(Folder)
     IJ.run('Subtract Background...', 'rolling=7 stack');
     IJ.run('Gaussian Blur...', 'sigma=1');
     IJ.run('Enhance Contrast', 'saturated=0.35');
-    IJ.run('Morphological Filters', 'operation=[White Top Hat] element=Disk radius=6');
     imp = WindowManager.getCurrentImage;
+    imp.setProcessor( Morphology.whiteTopHat( getChannelProcessor(imp), DiskStrel.fromRadius(6) ) );
     IJ.setAutoThreshold(imp,'Mean dark');
     IJ.run('Convert to Mask');
     IJ.run('Watershed');
