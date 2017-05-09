@@ -1,6 +1,3 @@
-** Must download Fiji (https://fiji.sc/) and add to your path
-		Fiji.app\scripts
-
 (1) RunExperiment
 		- Select folder
 		- Adjust settings
@@ -51,10 +48,6 @@
 		FPS				Capture speed
 		Frames			Number of frames recorded
 		Slices			Number of slices recorded
-		ImageWidth		Horizontal pixel resolution
-		ImageHeight		Vertical pixel resolution
-		FlyBackFrames	Number of flyback frames
-		AutoCorrFrames	Neighbourhood size in autocorrelation
 
 	AnalysedData.
 		Times 			Time of each frame for each ROI
@@ -64,12 +57,7 @@
 	RoiData(n).
 		Brightness		Brightness profile of Roi n
 		Coordinates 	Coordinates of Roi n
-		AutoCorrelation	Coefficient to determine responsiveness/whiteness of signal
-		XCor			Average response of ROI to each stimulus
-		ControlResponse	Signal during control presentation of blank screen
-		RF				Grid of reshaped XCor data
-		RFmu			Center of RF (assuming normal distribution)
-		RFsigma			Variance in RF (assuming normal distribution)
+		Responded		Depreciated (leftover from thresholding responses)
 
 	StimulusData.
 		Raw 			3 x n matrix. First column is simply the
@@ -91,7 +79,8 @@
 			BottomPad			Verticle offset of display area
 			Area 				Size of display area
 			Background 			Shade of background between 0 and 1
-		Responses		Correlation between responses and stimulus
+		Responses		Correlation between responses and stimulus 
+		Vector			Stimulus time vectors
 
 
 	*** Detailed Description of Analaysis
@@ -99,15 +88,20 @@
 	PART 1
 	1. Get experimental parameters from Experiment.xml
 	2. Import the ImageJ libraries so MATLAB can use ImageJ functions
-	3. Project all images on top of each other to get clear picture of 
+	3. Loop through each slice (Not fully implemented: extracting the image
+		from the raw data file will depend on how we are imaging different
+		slices)
+	4. Project all images on top of each other to get clear picture of 
 		structure
-	4. Use ImageJ libraries to analyse image; white top hat convolution, threshold, 
-		watershed, remove outliers, and then use Analyze Particles
-	5. Get coordinates of each ROI, defined as the mean of all points 
+	5. Use ImageJ libraries to analyse image; roughly we threshold, 
+		watershed remove outliers, and then use their Analyze Particles
+		algorithm
+	6. Get coordinates of each ROI, defined as the mean of all points 
 		defining the ROI
-	6. Calculate the mean pixel value of the largest circumscribed rectangle at each 
-		frame for each ROI, giving us ROI-oriented t-profile
-	7. Save extracted ROI data
+	7. Find the smallest rectangle containing the ROI
+	8. Calculate the mean pixel value of the rectangle at each frame for 
+		each ROI, giving us ROI-oriented t-profile
+	9. Save extracted ROI data
 	
 	PART 2
 	1. Read StimulusTimes.txt and StimulusConfig.txt
@@ -115,7 +109,7 @@
 	3. Calculate dF/F
 	4. Set frame times from step 2 as time axis
 	5. Adjust StimulusTimes by first frame time to synchronize
-	6. Calculate cross correlation between stimuli and dFF
+	6. Calculate cross correlation between stimuli and Brightness
 	7. Save analysed data
 
 

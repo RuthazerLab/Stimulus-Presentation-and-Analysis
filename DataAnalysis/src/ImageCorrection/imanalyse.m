@@ -1,1 +1,0 @@
-K = convolve(convolve(convolve(convolve(subBack(I,7),'GaussianBlur'),'Despeckle'),'Sharpen'),'Sharpen');
