@@ -53,79 +53,20 @@ case 1  % Random squares
   number2data = @(vars) vars{1};
   vars = {0};
   conversion = @(i,num) i;
-  randomFunction = @randomOrder;
+  
 
   % Load stimuli into matrix
   for i = 1:num
     I(:,:,i) = square({i, ssiz, sqrt(num), height, width, buff, Sign, Background, PlusMinusDifference});
   end
 
-case 2  % Circle of specified shade and radius
-
-  % Set stimulus-specific functions and variables
-  number2data = @(vars) vars{3} + log((vars{1}-1)/vars{2}*(exp(1-vars{3})-1)+1);
-  vars = {0,num,GreyValue};
-  conversion = @(i,num) i+1;
-  randomFunction = @randomOrder;
-  Background = 0;
-
-  % Load stimuli into matrix
-  for i = 1:num+1
-    vars{1} = i;
-    y = number2data(vars);
-    I(:,:,i) = circle({y,width,height,ssiz,buff,radius,Background});
-  end
-
-case 3  % Displays bar in specified direction and width
-
-  % Set stimulus-specific functions and variables
-  Background = 0;
-  I = loadLUT(variables(4), variables(5), variables(6), height,width);
-  randomFunction = @(a,b,c) null(1);
-
-case 4 % Display Brightness Levels
-
-  radius = 1000;
-
-  % Set stimulus-specific functions and variables
-  number2data = @(vars) vars{3} + log((vars{1}-1)/vars{2}*(exp(1-vars{3})-1)+1);
-  vars = {0,num,GreyValue};
-  conversion = @(i,num) i+1;
-  randomFunction = @randomOrder;
-  Background = 0;
-
-  % Load stimuli into matrix
-  for i = 1:num+1
-    vars{1} = i;
-    y = number2data(vars);
-    I(:,:,i) = circle({y,width,height,ssiz,buff,radius,Background});
-  end
-
-
-case 5  % Displays dark/light squares on black background
-
-  % Set stimulus-specific functions and variables
-  num = num^2;
-  number2data = @(vars) vars{1};
-  vars = {0};
-  conversion = @(i,num) i+num+1;
-  randomFunction = @randomOrder2;
-  Background = 0.5;
-  PlusMinusDifference = 0.25;
-
-  % Load stimuli into matrix
-  for i = -num:num
-    I(:,:,i+num+1) = balancedSquare({abs(i), ssiz, sqrt(num), height, width, buff, sign(i), Background, PlusMinusDifference});
-  end
-
-case 6  % Displays bars, overlap for ROI detection.
+case 2  % Displays bars, overlap for ROI detection.
 
   % Set stimulus-specific functions and variables
   num = num;
   number2data = @(vars) vars{1};
   vars = {0};
   conversion = @(i,num) i;
-  randomFunction = @randomOrder;
 
   % Load stimuli into matrix. Top Bottom Left Right
   for j = 0:1
@@ -136,44 +77,108 @@ case 6  % Displays bars, overlap for ROI detection.
 
   num = 2*num;
 
-case 7  % Circle of specific shade
+case 3  % Display Brightness Levels
+
+  radius = 1000;
+  GreyValue = 0;
 
   % Set stimulus-specific functions and variables
-  levels = PlusMinusDifference/num;
-  number2data = @(vars) vars{1}*vars{2};
-  vars = {0, levels};
-  conversion = @(i,num) i+num+1;
-  randomFunction = @randomOrder2;
-
-  % Load stimuli into matrix
-  for i = -num:num
-    I(:,:,i+num+1) = circle({levels*i+Background,width,height,ssiz,buff,radius,Grey(:,:,1)});
-  end
-
-case 8   % Circles of different radii
-
-  % Set stimulus-specific functions and variables
-  number2data = @(vars) vars{3}/sqrt(2)*-log((vars{1}+1)/(vars{2}+1))/log(vars{2});
-  vars = {0, num, ssiz};
-  conversion = @(i,num) i;
-  randomFunction = @randomOrder;
+  number2data = @(vars) vars{1}/vars{2};
+  vars = {0,num,GreyValue};
+  conversion = @(i,num) i+1;
+  Background = 0;
 
   % Load stimuli into matrix
   for i = 1:num+1
     vars{1} = i;
     y = number2data(vars);
-    I(:,:,i) = circle({0,width,height,ssiz,buff,y, Grey});
+    I(:,:,i) = circle({y,width,height,ssiz,buff,radius,Background});
   end
+
+case 4  % Spatial Frequency
+
+  F = compFact(width);
+  F = F(1:end-2);
+  num = length(F);
+  % num = 4*length(F);
+  vars = {1, F, width};
+  number2data = @(vars) vars{2}(vars{1})/vars{3};
+  % number2data = @(vars) vars{1};
+  conversion = @(i,num) i;
+
+  % I = zeros(height,width,num*4); J = zeros(height,width,num*4);
+  % for theta = 45:45:180
+  %   [temp1 temp2] = SpatialFrequencyAngled(theta,height,width);
+  %   I(:,:,end+1:end+1+size(temp1,3)) = temp1;
+  %   J(:,:,end+1:end+1+size(temp2,3)) = temp2;
+  % end
+  [I J] = SpatialFrequencyAngled(0,height,width);
+
+  Hz = 0.05;
+
+case 5 % Displays bar in specified direction and width
+
+  number2data = @(vars) vars{1}*vars{2};
+  vars = {0, num};
+
+  h = waitbar(1/(360/num),['1/' int2str(360/num)], 'Name','Constructing');
+
+  for i = num:num:360
+    temp2 = dirSelect(i,width,floor(height/4));
+    I{i/num} = temp2(1:height,:,:);
+    waitbar(i/360,h,[int2str(i/num) '/' int2str(360/num)]);
+  end
+
+  Period = 0.1;
+
+  delete(h);
+
+  White = I{1};
+  White = White(:,:,1);
+  Background = 1;
+  
+  num = 360/num;
+
+
+case 6 % Orientation Selectivity
+
+  number2data = @(vars) vars{1}*vars{2};
+  vars = {0, num};
+  conversion = @(i,num) i;
+
+  I = ones(height,width,180/num+1);
+
+  H = ssiz/20;
+  y1 = (height-ssiz/2+buff);
+  x1 = (width/2);
+
+  for theta = num:num:180
+    m = tan(theta*pi/180);
+    M = sqrt(m^2+1);
+    if(theta == 90)
+      I(:,width/2-H:width/2+H,theta/num) = 0;
+      continue;
+    end
+    for y = 1:height
+      for x = 1:width
+        if(abs((y-y1) - m*(x-x1)) < H*M)
+          I(y,x,theta/num) = 0;
+        end
+      end
+    end
+  end
+
+  num = 180/num;
 
 end 
 
 % Display blank background
-figure(fig), imshow(Background*White,'border','tight','Parent',gca);
+figure(fig), hImage = imshow(Background*White,'border','tight','Parent',gca);
 shade = Background(1,1);
 
 
 % Generate random order for stimuli
-ran = randomFunction(num, fois, 1);
+ran = randomOrder(num, fois, 1);
 
 % Wait for user to click continue
 if(~Execution)
@@ -192,42 +197,87 @@ if(Triggered)
   outputSingleScan(s,0);
 end
 
+% Saves stimulus configuration data
 Props(1,:) = [length(ran)/fois fois, typ, lag1, lag2, PlusMinusDifference];
 Props(2,:) = [Sign, height, width, buff,ssiz, Background];
 
+% Position screen
 Pos = get(gcf,'Position');
 set(gcf,'Position',Pos + [0 0 0 25]);
 
-if(typ == 3)
-  data = [variables(5) variables(6) lag1];
-  data = barsLUT(I, fig, [data], data);
-else
-
-% Pause 10 (1+9) seconds to set baseline
-pause(9);
 
 % Loop through each stimulus
 for i = 1:length(ran)
   vars{1} = ran(i);
   data(i,1) = i;
-  data(i,3) = number2data(vars);  % Convert stimulus number into discriptive number
-end
-
-for i = 1:length(ran)
-  data(i,2) = toc(start);
-  % Presentation background as control
   if(ran(i) == 0)
-    pause(lag1);
     data(i,3) = 0;
   else
-    tic;
-    imshow(I(:,:,conversion(ran(i),num)),'border','tight','Parent',gca); % Show stimulus and convert stimulus number into matrix index
-    pause(max(lag1-toc,0)); % Accounts for image presentation time in lag 
+    data(i,3) = number2data(vars);  % Convert stimulus number into discriptive number
   end
-  tic;
-  imshow(Background*White,'border','tight','Parent',gca);
-  pause(max(lag2-toc,0)); % Accounts for image presentation time in lag 
 end
+
+% Pause 10 (1+9) seconds to set baseline
+% pause(9); 
+
+if(typ == 5)  % Special presentaton for moving bars
+
+  for j = 1:length(ran)
+    data(j,2) = toc(start);
+    if(ran(j) == 0)
+      pause(lag2);
+      data(j,3) = 0;
+    else
+      J = I{ran(j)};
+      tic;
+      for k = 0:floor(lag1)-1
+        for i = 1:size(J,3)
+            set(hImage,'CData',J(:,:,i));
+            pause(Period/size(J,3));
+        end
+      end
+      pause(lag2);
+    end
+  end
+
+elseif(typ == 4)
+
+  for j = 1:length(ran)
+    if(ran(j) == 0)
+      pause(lag2);
+      data(j,2) = toc(start);
+      pause(lag1);
+      data(j,3) = 0;
+    else
+      set(hImage,'CData',I(:,:,ran(j)));
+      pause(lag2);
+      data(j,2) = toc(start);
+      for i = 1:lag1*floor(1/Hz)
+          set(hImage,'CData',J(:,:,ran(j)));
+          pause(Hz/2);
+          set(hImage,'CData',I(:,:,ran(j)));
+          pause(Hz/2);
+      end
+    end
+  end
+
+else    % All other stimuli
+
+  for i = 1:length(ran)
+    data(i,2) = toc(start);
+    % Presentation background as control
+    if(ran(i) == 0)
+      pause(lag1);
+      data(i,3) = 0;
+    else
+      tic;
+      imshow(I(:,:,conversion(ran(i),num)),'border','tight','Parent',gca); % Show stimulus and convert stimulus number into matrix index
+      pause(max(lag1-toc,0)); % Accounts for image presentation time in lag 
+    end
+    tic;
+    imshow(Background*White,'border','tight','Parent',gca);
+    pause(max(lag2-toc,0)); % Accounts for image presentation time in lag 
+  end
 
 end
 
@@ -255,30 +305,10 @@ dlmwrite(file2,Props,'precision','%.3f');
 
 
 %% --- Random ordering of {0,1,....,num*fois}
-function ran = randomOrder(num, fois,d)
+function ran = randomOrder(num, fois,d,typ)
 
 ran = datasample(repmat([0:num],[1 fois]),(num+1)*fois,'Replace',false);
 ran = transpose(ran);
 
-
-%% --- Random ordering of {-num*fois, ... , -1, 0, 1, ..., num*fois}
-function ran = randomOrder2(num, fois,d)
-
-ran = datasample(repmat([-num:num],[1 fois]),(2*num+1)*fois,'Replace',false);
-ran = transpose(ran);
-
-
-%% --- Three column random order with no repeats per row.
-function ran = randomOrder3(num, fois,d)
-  
-ran = randomOrder2(num,fois,d);
-for i = 1:length(ran)
-  if(ran(i,1) == 0)
-    ran(i,2) = 0; ran(i,3) = 0;
-  else
-    ran(i,2) = datasample(setdiff([-num:num],[0 ran(i,1) -ran(i,1)]),1);
-    ran(i,3) = datasample(setdiff([-num:num],[0 ran(i,1) -ran(i,1) ran(i,2) -ran(i,2)]),1);
-  end
- end
 
 

@@ -61,6 +61,8 @@ else
 	c = c(:,S);
 end
 
+figure(1);
+
 
 % Plots two sets of coordinates with colour values.
 if(length(c(t,:)) > 0)

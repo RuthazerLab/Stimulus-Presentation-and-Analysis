@@ -328,15 +328,11 @@ function listbox2_Callback(hObject, eventdata, handles)
 
 		% If you have heatmap on, plot receptivity field instead of dFF0 data
 		if(handles.toggleValue == 2 || handles.toggleValue == 3)
-			try
+			if(handles.StimulusData.Configuration.Type == 1 || handles.StimulusData.Configuration.Type == 2)
 				getRFMap(n,handles.RoiData,handles.StimulusData.Configuration);
 				ax = gca;
-			catch
-				msgbox('No response data!','HeatMapError','modal');
-				handles.radiobutton2.set('Value',0);
-				guidata(hObject,handles);
-				radiobutton1_Callback(hObject,eventdata,handles);
-				return;
+			else
+				bar(handles.RoiData(n).XCor);
 			end
 		else		
 			YMAX = 20*median(handles.AnalysedData.dFF0(n,:));
@@ -441,7 +437,7 @@ case 1
 	if(isempty(handles.cc))
 
 		for i = 1:RC
-			c(i,:) = repmat(1-min(handles.AnalysedData.pValues(i,:)),[1 TC]);
+			c(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
 		end
 		handles.cc = c;
 	else
@@ -472,7 +468,7 @@ case 3
 
 	if(isempty(handles.cc))
 		for i = 1:RC
-			c(i,:) = repmat(1-min(handles.AnalysedData.pValues(i,:)),[1 TC]);
+			c(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
 		end
 	else
 		c = handles.cc;
@@ -483,7 +479,6 @@ case 3
 		for j = 1:TC
 			if(c(i,j) > 0.99)
 				try
-
 					c(i,j) = colour(handles.Response_Center+1);
 				catch
 					c(i,j) = 0;
@@ -531,7 +526,7 @@ case 1
 
 	if(isempty(handles.cc))
 		for i = 1:RC
-			c(i,:) = repmat(1-min(handles.AnalysedData.pValues(i,:)),[1 TC]);
+			c(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
 		end
 	else
 		c = handles.cc;
@@ -557,7 +552,7 @@ case 3
 	handles.pushbutton8.set('Visible','on');
 	if(isempty(handles.cc))
 		for i = 1:RC
-			c(i,:) = repmat(1-min(handles.AnalysedData.pValues(i,:)),[1 TC]);
+			c(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
 		end
 		handles.cc = c;
 	else
@@ -614,15 +609,17 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-Label_Options = {'Horizontal','Vertical'};
+Label_Options = {'Vertical','Horizontal'};
 
 handles.Response_Center = mod(handles.Response_Center+1,2);
-
 hObject.set('String',Label_Options(handles.Response_Center+1));
+
+guidata(hObject,handles);
+
 
 radiobutton2_Callback(hObject,eventdata,handles);
 
-guidata(hObject,handles);
+
 
 
 % --- Outputs from this function are returned to the command line.
@@ -676,13 +673,12 @@ end
 set(0,'CurrentFigure',handles.fig);
 
 if(handles.toggleValue == 2 || handles.toggleValue == 3)
-	try
+	if(handles.StimulusData.Configuration.Type == 1 || handles.StimulusData.Configuration.Type == 2)
 		getRFMap(n,handles.RoiData,handles.StimulusData.Configuration);
 		colorbar;
 		ax = gca;
-	catch
-		msgbox('No response data!','HeatMapError','modal');
-		handles.radiobutton2.set('Value',0);
+	else
+		bar(handles.RoiData(n).XCor);
 	end
 else		
 	YMAX = 20*median(handles.AnalysedData.dFF0(n,:));

@@ -144,7 +144,8 @@ handles.typ = 0;
 handles.ssiz = str2num(handles.edit11.String);
 
 % Names of the different stimulus options
-handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'Intensity Circles'; 'Moving Bars'; 'Brightness Levels'; 'Balanced Squares';'RF Bars';'Balanced Circles';'Varying Radii'};
+handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'RF Bars';
+'Brightness Levels'; 'Spatial Frequency'; 'Direction'; 'Orientation'};
 handles.text1.set('Visible','off'); handles.edit1.set('Visible','off');
 handles.text2.set('Visible','off'); handles.edit2.set('Visible','off');
 handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
@@ -200,65 +201,7 @@ case 1  % Random Squares
   handles.text2.set('String', 'Num Squares:'); handles.edit2.set('String',F);
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
 
-case 2  % Intensity Circles
-
-  handles.edit2.set('style','edit');
-  handles.edit2.Position(3) = 7.5;
-
-  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
-  handles.text1.set('String', 'Repititions:'); handles.edit1.set('String','1');
-  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
-  handles.text2.set('String', 'Levels:'); handles.edit2.set('String','1');
-  handles.text3.set('Visible','on'); handles.edit3.set('Visible','on');
-  handles.text3.set('String','Radius'); handles.edit3.set('String','100');
-
-case 3  % Moving Bars
-
-  handles.edit2.set('Value',1);
-  handles.edit2.set('style','popupmenu');
-  handles.edit2.Position(3) = 10;
-
-  % Different possible directions.
-  F = {'N  to S'; 'S  to N'; 'W to E'; 'E to W'; 'SW to NE';'NE to SW';'NW to SE';'SE to NW'};
-
-  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
-  handles.text1.set('String', 'Bar Width:'); handles.edit1.set('String','50');
-  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
-  handles.text2.set('String', 'Direction:'); handles.edit2.set('String', F);
-  handles.text3.set('Visible','on'); handles.edit3.set('Visible','on');
-  handles.text3.set('String', 'Spacing:'); handles.edit3.set('String','50');
-  handles.text15.set('String', 'Bar Speed'); handles.edit12.set('String','1');
-  handles.text4.set('String','Run Time: Inf');
-
-case 4  % Brightness Levels
-
-  handles.edit2.set('style','edit');
-  handles.edit2.Position(3) = 7.5;
-
-  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
-  handles.text1.set('String', 'Repititions:'); handles.edit1.set('String','10');
-  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
-  handles.text2.set('String','Levels'); handles.edit2.set('String','10');
-  handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
-
-case 5  % Balanced Squares
-
-  handles.edit2.set('Value',1);
-  handles.edit2.set('style','popupmenu');
-  handles.edit2.Position(3) = 7.5;
-
-  factors = compFact(handles.ssiz);
-  for i = 1:min(length(factors),10)
-    F{i} = factors(i);
-  end
-
-  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
-  handles.text1.set('String', 'Repititions'); handles.edit1.set('String','1');
-  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
-  handles.text2.set('String', 'Num Squares:'); handles.edit2.set('String',F);
-  handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
-
-case 6  % RF Bars
+case 2 % RF Bars
 
   handles.edit2.set('Value',1);
   handles.edit2.set('style','popupmenu');
@@ -277,7 +220,8 @@ case 6  % RF Bars
   handles.text2.set('String', 'Num Squares:'); handles.edit2.set('String',F);
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
 
-case 7  % Balanced Intensity Circles
+
+case 3  % Brightness Levels
 
   handles.edit2.set('style','edit');
   handles.edit2.Position(3) = 7.5;
@@ -285,27 +229,57 @@ case 7  % Balanced Intensity Circles
   handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
   handles.text1.set('String', 'Repititions:'); handles.edit1.set('String','10');
   handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
-  handles.text2.set('String', 'Levels:'); handles.edit2.set('String','10 ');
-  handles.text3.set('Visible','on'); handles.edit3.set('Visible','on');
-  handles.text3.set('String','Radius'); handles.edit3.set('String','100');
-
-case 8  % Varying Circle Radii
-
-  handles.edit2.set('style','edit');
-  handles.edit2.Position(3) = 7.5;
-
-  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
-  handles.text1.set('String', 'Repititions:'); handles.edit1.set('String','10');
-  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
-  handles.text2.set('String', 'Levels:'); handles.edit2.set('String','10 ');
+  handles.text2.set('String','Levels'); handles.edit2.set('String','10');
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
 
+
+case 4  % Spatial Frequency
+
+  handles.edit2.set('style','edit');
+  handles.edit2.Position(3) = 7.5;
+
+  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
+  handles.text1.set('String', 'Repititions:'); handles.edit1.set('String','10');
+  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
+  handles.text2.set('Visible', 'off'); handles.edit2.set('Visible','off');
+  handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
+
+
+case 5  % Direction
+
+  handles.edit2.set('Value',1);
+  handles.edit2.set('style','popupmenu');
+  handles.edit2.Position(3) = 7.5;
+
+  F = {5,10,15,20,30,45,60,90};
+
+  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
+  handles.text1.set('String', 'Repititions'); handles.edit1.set('String','1');
+  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
+  handles.text2.set('String', 'Angles:'); handles.edit2.set('String',F);
+  handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
+
+case 6 % Orientation
+
+  handles.edit2.set('Value',1);
+  handles.edit2.set('style','popupmenu');
+  handles.edit2.Position(3) = 7.5;
+
+  F = {5,10,15,20,30,45,60,90};
+
+  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
+  handles.text1.set('String', 'Repititions'); handles.edit1.set('String','1');
+  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
+  handles.text2.set('String', 'Angles:'); handles.edit2.set('String',F);
+  handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
+ 
 end
 
-handles = updateTime(hObject, eventdata, handles);
+
 
 handles.factors = F;
 handles.typ = typ;
+handles = updateTime(hObject, eventdata, handles);
 guidata(hObject,handles);
 
 
@@ -342,15 +316,6 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% fid = fopen('test.txt','w');
-% if(fid > 0)
-%   fclose(fid);
-% else
-%   disp('No read/write permssion. Please select a different folder.');
-%   return;
-% end
-
-
 handles.height = str2num(handles.edit8.String);   % Height of images
 handles.width  = str2num(handles.edit9.String);   % Width of images
 handles.buffer = str2num(handles.edit10.String);  % Offset from bottom
@@ -386,57 +351,33 @@ case 1    % Random Squares
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
 
-case 2    % Intensity Circles
-
-  num = str2num(handles.edit2.String);
-  fois = str2num(handles.edit1.String);
-  handles.circleRadius = str2num(handles.edit3.String);
-  variables = [fois typ num];
-
-case 3    % Moving Bars
-
-  num = handles.edit2.Value;
-  fois = str2num(handles.edit1.String);
-  direction = -handles.edit2.Value/2;
-
-  if(mod(direction,1) ~= 0)
-    direction = ceil(-direction);
-  end
-
-  spacing = str2num(handles.edit3.String);
-  bwidth = str2num(handles.edit1.String);
-
-  variables = [fois typ num direction spacing bwidth];
-
-case 4    % Brightness Levels
-
-  num = str2num(handles.edit2.String);
-  fois = str2num(handles.edit1.String);
-  variables = [fois typ num];
-
-case 5    % Balanced Squares
+case 2     % RF Bars
 
   num = handles.factors{handles.edit2.Value};
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
 
-case 6    % RF Bars
+case 3    % Brightness Levels
+
+  num = str2num(handles.edit2.String);
+  fois = str2num(handles.edit1.String);
+  variables = [fois typ num];
+
+case 4    % Spatial Frequency
+
+  num = length(compFact(str2num(handles.edit9.String)))-2;
+  fois = str2num(handles.edit1.String);
+  variables = [fois typ num];
+
+case 5    % Direction
 
   num = handles.factors{handles.edit2.Value};
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
 
+case 6    % Orientation
 
-case 7
-
-  num = str2num(handles.edit2.String);
-  fois = str2num(handles.edit1.String);
-  handles.circleRadius = str2num(handles.edit3.String);
-  variables = [fois typ num];
-
-case 8
-
-  num = str2num(handles.edit2.String);
+  num = handles.factors{handles.edit2.Value};
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
 
@@ -445,30 +386,7 @@ end
 guidata(hObject,handles);
 
 % Present stimuli
-% data = stimulusFull(hObject, variables, handles);
 [data shade] = showStimuli(hObject, variables, handles);
-
-height = handles.height;
-width = handles.width;
-
-% If experiment was successful, display Experiment Over image.
-if(sum(sum(data ~= 0)) ~= 0 && typ ~= 3)
-
-  load ResourceImages;
-  I = zeros(height,width);
-
-  [a b] = size(ExperimentOver);
-  b = 2*floor(b/2);
-  for i = 1:a
-    for j = ceil((width-b)/2)+1:floor(width+b)/2
-        I(i,j) = ExperimentOver(i,j+(b-width)/2);
-    end
-  end
-
-  imshow(I+shade,'border','tight');
-end
-
-
 
 %% ---- Edit callback function ---- %%
 
@@ -486,9 +404,10 @@ function edit2_Callback(hObject, eventdata, handles)
 % hObject    handle to edit2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-if(handles.typ == 2 && str2num(handles.edit2.String) > floor(handles.ssiz/2))
-  handles.edit2.String = floor(handles.ssiz/2);
-end
+
+% if(handles.typ == 2 && str2num(handles.edit2.String) > floor(handles.ssiz/2))
+%   handles.edit2.String = floor(handles.ssiz/2);
+% end
 
 updateTime(hObject, eventdata, handles);
 guidata(hObject,handles);
@@ -560,27 +479,25 @@ varargout{1} = handles.output;
 
 function handles = updateTime(hObject, eventdata, handles)
 
-  typ = handles.listbox1.Value;
+  typ = handles.typ;
 
-  if(typ == 1 || typ == 4)
+  if(typ == 0)
     return;
   end
 
   L = str2num(handles.edit1.String) * (str2num(handles.edit13.String) + str2num(handles.edit12.String));
 
   switch typ
-  case 2
+  case 1
     L = L * (str2num(handles.edit2.String{handles.edit2.Value})^2+1);
-  case {3, 5}
-    L = L * (1+str2num(handles.edit2.String));
-  case 6
-     L = L * (str2num(handles.edit2.String{handles.edit2.Value})^2*2+1);
-  case {7}
+  case 2
     L = L * (str2num(handles.edit2.String{handles.edit2.Value})*2+1);
-  case 8
-    L = L * str2num(handles.edit2.String)*2+1;
-  case 9
-    L = L * str2num(handles.edit2.String)+1;
+  case 3
+    L = L * (str2num(handles.edit2.String)+1);  
+  case 4
+     L = L * (length(compFact(str2num(handles.edit9.String)))-2);
+  case {5,6}
+    L = L * (360/str2num(handles.edit2.String{handles.edit2.Value})+1);
   end
 
   L = L + 10;
