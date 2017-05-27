@@ -32,8 +32,13 @@ function I = RoiBars(varargin)
   a2 = (width -ssiz)/2;		% Left Side
   b2 = (width + ssiz)/2;	% Right Side
 
-  if(isVert)
-    I(a1:b1,a2+siz*(pos-1):a2+siz*pos) = Colour;
+  % if(isVert)
+  %   I(a1:b1,a2+siz*(pos-1):a2+siz*pos) = Colour;
+  % else
+  % 	I(a1+siz*(pos-1):a1+siz*pos,a2:b2) = Colour;
+  % end
+ if(isVert)
+    I(:,a2+siz*(pos-1):a2+siz*pos) = Colour;
   else
-  	I(a1+siz*(pos-1):a1+siz*pos,a2:b2) = Colour;
+    I(a1+siz*(pos-1):a1+siz*pos,:) = Colour;
   end

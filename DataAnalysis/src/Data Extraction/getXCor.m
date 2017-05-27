@@ -23,15 +23,10 @@ for r = 1:RoiCount
 	end
 	RoiData(r).XCor = mu;
 	StimulusData.Responses(:,r) = mean(mu');
+	for j = 2:(StimulusData.Configuration.StimuliCount)
+		[h p(r,j-1) ci stats] = ttest2(RoiData(r).XCor(1,:),RoiData(r).XCor(j,:),'tail','left');
+	end
 end
 
-
-
-
-% for i = 1:stimCount
-% 	xbar(i) = mean(RoiData(560).XCor(i,:));
-% 	sigma(i) = std(RoiData(560).XCor(i,:));
-% end
-% hold off;
-% bar([0:16],RoiData(560).XCor); hold on;
-% h=errorbar([0:16],xbar,sigma,'b'); set(h,'linestyle','none')
+AnalysedData.pValues = p;
+AnalysedData.Responsive = 1 - min(AnalysedData.pValues');

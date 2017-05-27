@@ -1,6 +1,6 @@
-function BuildVideo(Folder,StimulusData,AnalysedData,FrameRate)
+function VideoWithStimuli(Folder,StimulusData,AnalysedData, Slice)
 
-% BuildVideo(Folder,StimulusData,AnalysedData,FrameRate)
+% BuildVideo(Folder,Skipped_Frames)
 % 	Folder: Experiment folder
 % 	Skipped_Frames: Step size between each frame of video
 % 
@@ -16,12 +16,6 @@ StepCount   	= str2num(MetaData.ThorImageExperiment.ZStage.Attributes.steps);
 fps         	= str2num(MetaData.ThorImageExperiment.LSM.Attributes.frameRate(1:5));
 FlyBackFrames 	= str2num(MetaData.ThorImageExperiment.Streaming.Attributes.flybackFrames);
 
-Skipped_Frames = 0;
-
-if(StepCount == 1)
-	FlyBackFrames = 0;
-end
-
 for i = 1:512
 	for j = 1:512
 		if((i-45)^2+(j-450)^2<=34^2)
@@ -32,43 +26,30 @@ for i = 1:512
 	end
 end
 
+[Folder2 File] = fileparts(Folder);
+
 T = time2Frame(StimulusData.Raw(:,2),AnalysedData);
 
+if(StepCount == 1)
+	FlyBackFrames = 0;
+end
+
+vobj = VideoWriter(File,'Motion JPEG AVI');
+vobj.FrameRate = 30;
+vobj.Quality = 75;
+open(vobj);
 
 fid = fopen(fullfile(Folder,'Image_0001_0001.raw'),'r','l');
 
 filename = [];
 
-for i = 1:StepCount
-	if(StepCount == 1)
-		filename{i} = ['Experiment.avi'];
-	else
-		filename{i} = ['Experiment' int2str(i) '.avi'];
-	end
-
-	if(exist(fullfile(Folder,filename{i})))
-		delete(fullfile(Folder,filename{i}));
-	end
-	vobj{i}=VideoWriter(filename{i}, 'Motion JPEG AVI');
-	vobj{i}.FrameRate=FrameRate;
-	vobj{i}.Quality=75;
-	open(vobj{i});
-end
-
-
 h = waitbar(1/(FrameCount),['1/' int2str(FrameCount)], 'Name','Building');
 
 
-for ii = 1:FrameCount
+for i = 1800*(StepCount+FlyBackFrames):2250*(StepCount+FlyBackFrames)
 
-    [a b] = mdivide(ii,StepCount+FlyBackFrames);
-
-    if(FlyBackFrames == 0 && StepCount == 1)
-    	b = 1;
-    end
-
-    
-    if(sum(b == [1:StepCount]) == 0 || mod(a+1,Skipped_Frames) == 0)
+	[a b] = mdivide(i,StepCount+FlyBackFrames);
+	if(b~=Slice)
       fseek(fid,ImageWidth*ImageHeight*2,0);
       continue;
     end
@@ -79,21 +60,20 @@ for ii = 1:FrameCount
 	I = get8BitImage(fid,ImageHeight,ImageWidth);
 
 	if(sum(Frame==T)>0)
-		I = I + suint8(J).*(StimulusData.Raw(find(Frame==T),3)/max(StimulusData.Raw(:,3)));
+		I = I + suint8(J).*StimulusData.Raw(find(Frame==T),3);
 	end
-	
-	writeVideo(vobj{Slice}, I);
-		
-	waitbar(ii/(FrameCount),h,[int2str(ii) '/' int2str(FrameCount)]);
+
+	writeVideo(vobj, I);
+
+	waitbar(i/(FrameCount),h,[int2str(i) '/' int2str(FrameCount)]);
 end
 
-delete(h);
+close(vobj);
 fclose(fid);
-for i =	1:StepCount
-	close(vobj{i});
-end
+delete(h);
 
 end
+
 
 function I = get8BitImage(fid,ImageHeight,ImageWidth)
 
