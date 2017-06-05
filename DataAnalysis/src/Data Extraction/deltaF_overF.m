@@ -11,15 +11,8 @@ function D = deltaF_overF(RoiData, tau0, AvgFrame, BLThresh)
 
 % Initialize variables and adjusted to avoid perturbation
 % due to convolution-related field shrinkage
-av = zeros(length(RoiData),1);
-av(:,1:AvgFrame) = inf;
-F0(:,1:AvgFrame) = inf;
-R(:,1:AvgFrame) = 0;
-D(:,1:AvgFrame) = 0;
 
-% BLThresh = 7;
 AvgFrame = 2;
-% tau0 = 0.8;
 
 % Weighting parameter such that exp(-abs(k)/tau0) > 0.001
 N = ceil(3*tau0/log10(exp(1)));
@@ -29,50 +22,48 @@ h = waitbar(1/length(RoiData), 'Please Wait...', 'Name','Baselining');
 for i = 1:length(RoiData)
 	
 	% Raw data for each ROI
-	F(i,:) = RoiData(i).Brightness;
+	Trace = RoiData(i).Brightness;
 
 	waitbar(i/(length(RoiData)),h);
 
-	for j = 1:length(RoiData(1).Brightness)
+	for j = 1:length(Trace)
 
 		% Smooths data with averaging
-		av(i,j) = mean(F(i,max(j-AvgFrame,1):min(j+AvgFrame,length(RoiData(1).Brightness))));
+		av(1:AvgFrame) = inf;
+		av(j) = mean(Trace(max(j-AvgFrame,1):min(j+AvgFrame,length(Trace))));
 
 		% Finds baseline from previous BLThresh frames
-		F0(i,j) = min(av(i,max(j-BLThresh,1):j));
+		F0(1:AvgFrame) = inf;
+		F0(j) = min(av(max(j-BLThresh,1):j));
 
 		% Normalizes data to percent above baseline
-		R(i,j) = (F(i,j)-F0(i,j))/F0(i,j);
+		R(:,1:AvgFrame) = 0;
+		R(j) = (Trace(j)-F0(j))/F0(j);
 
 		% Uses moving exponentially-weighted averaging to denoise
-		D(i,j) = denoise(i,j);
+		R(j) = denoise(R,j,N,tau0);
 
 
 	end
+
+	D(i,:) = R;
 
 end
 
-% D = R;
-
-
 delete(h);
 
+function G = denoise(R,t,N,tau0)
+	G = 0;
+	num = 0;
+	den = 0;
 
-	function G = denoise(r,t)
-		G = 0;
-		num = 0;
-		den = 0;
-
-		% exp(-abs(k)/tau0) -> 0 as k -> Inf, with the rate
-		% determined by tau0. N is determined to reduce 
-		% calculation time (otheriwse by the time we get to 
-		% the last time point we would be looping through 
-		% all previous time points.)
-		for k = 0:min(t-1,N)
-			num = num + R(r,t-k)*exp(-abs(k)/tau0);
-			den = den + exp(-abs(k)/tau0);
-		end
-		G = num/den;
+	% exp(-abs(k)/tau0) -> 0 as k -> Inf, with the rate
+	% determined by tau0. N is determined to reduce 
+	% calculation time (otheriwse by the time we get to 
+	% the last time point we would be looping through 
+	% all previous time points.)
+	for k = 0:min(t-1,N)
+		num = num + R(t-k)*exp(-abs(k)/tau0);
+		den = den + exp(-abs(k)/tau0);
 	end
-
-end		
+	G = num/den;

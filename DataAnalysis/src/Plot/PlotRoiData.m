@@ -133,8 +133,7 @@ function pushbutton1_Callback(hObject, eventdata, handles, file)
 
 	% Handles case where this function is called by the opening function
 	if(nargin == 4)
-		Path = file{1};
-		Data = file{2};
+		[Path Data] = fileparts(file);
 	else
 		[Data Path] = uigetfile('*.mat');
 	end
@@ -477,7 +476,7 @@ case 3
 	for i = 1:RC
 		colour = handles.RoiData(i).RFmu;
 		for j = 1:TC
-			if(c(i,j) > 0.99)
+			if(c(i,j) > 0.9999)
 				try
 					c(i,j) = colour(handles.Response_Center+1);
 				catch
@@ -562,7 +561,7 @@ case 3
 	for i = 1:RC
 		colour = handles.RoiData(i).RFmu;
 		for j = 1:TC
-			if(c(i,j) > 0.99)
+			if(c(i,j) > 0.9999)
 				try
 					
 					c(i,j) = colour(handles.Response_Center+1);

@@ -81,7 +81,6 @@ function [header ImageData] = getTimeSeries(Folder)
   jarDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'ext');
   javaaddpath(fullfile(jarDir,'MorphoLibJ_-1.3.1.jar'));
   javaaddpath(fullfile(jarDir,'ij-1.51n.jar'));
-  import ij.*;
   import ij.process.*;
 
   % Extract experiment data from Experiment.xml file
@@ -110,7 +109,7 @@ function [header ImageData] = getTimeSeries(Folder)
 
   % Loop through each slice
   for Slice = 1:StepCount
-
+    
     % Save slice and then open it in ImageJ
     imwrite(suint16(Average_Images(:,:,Slice)),fullfile(Folder,['Slice' int2str(Slice) '.tif']),'tif');
     IJ.run('Open...', ['path=[' Folder '\Slice' int2str(Slice) '.tif]']);
@@ -120,19 +119,19 @@ function [header ImageData] = getTimeSeries(Folder)
     K = plugin.frame.RoiManager.getRoiManager;
 
     % Image analysis
-    IJ.run('Subtract Background...', 'rolling=7 stack');
-    IJ.run('Gaussian Blur...', 'sigma=1');
-    IJ.run('Enhance Contrast', 'saturated=0.35');
+    ij.IJ.run('Subtract Background...', 'rolling=7 stack');
+    ij.IJ.run('Gaussian Blur...', 'sigma=1');
+    ij.IJ.run('Enhance Contrast', 'saturated=0.35');
     imp = WindowManager.getCurrentImage;
     imp.setProcessor( inra.ijpb.morphology.Morphology.whiteTopHat( getChannelProcessor(imp), inra.ijpb.morphology.strel.DiskStrel.fromRadius(6) ) );
-    IJ.setAutoThreshold(imp,'Mean dark');
-    IJ.run('Convert to Mask');
-    IJ.run('Watershed');
-    IJ.run('Remove Outliers...', 'radius=4 threshold=50 which=Dark');
-    IJ.run('Analyze Particles...', 'clear add stack');
-    IJ.run('Set Measurements...', 'mean redirect=None decimal=3');
+    ij.IJ.setAutoThreshold(imp,'Mean dark');
+    ij.IJ.run('Convert to Mask');
+    ij.IJ.run('Watershed');
+    ij.IJ.run('Remove Outliers...', 'radius=4 threshold=50 which=Dark');
+    ij.IJ.run('Analyze Particles...', 'clear add stack');
+    ij.IJ.run('Set Measurements...', 'mean redirect=None decimal=3');
     K.runCommand('save',fullfile(Folder,'RoiSet.zip'));    % Save ROI data
-    IJ.run('Close All'); 
+    ij.IJ.run('Close All'); 
 
     % Get coordinates from previously saved ROI data
     Coords = getRoiCoords(fullfile(Folder,'RoiSet.zip'));
@@ -146,6 +145,7 @@ function [header ImageData] = getTimeSeries(Folder)
     delete(fullfile(Folder,'RoiSet.zip'));
     delete(fullfile(Folder,['Slice' int2str(Slice) '.tif']));
 
+    ImageData = struct();
     % Save Roi Coordinates in struct
     ImageData(Slice) = struct('Slice', Slice, 'Results', [], 'NumOfROIs', length(CoordinateCenter(:,1)), ...
       'RoiCoordinates', transpose(CoordinateCenter),'Average',Average_Images(:,:,Slice), 'XBounds',[],'YBounds',[]);
@@ -263,6 +263,13 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   getXCor;
 
   try
+
+    for i = 1:length(RoiData)
+      for j = 1:length(RoiData)
+        temp = corrcoef(AnalysedData.dFF0(i,:),AnalysedData.dFF0(j,:));
+        AnalysedData.XCor(i,j) = temp(2,1);
+      end
+    end
     correlated = true;
     for i = 1:length(RoiData)
       RoiData(i).ControlResponse = StimulusData.Responses(1,i);
@@ -284,19 +291,22 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
       end
       if(StimulusData.Configuration.Type == 1 || StimulusData.Configuration.Type == 2)
 
-        Z = RoiData(i).RF;
-        Y = []; X = [];
-        for a = 1:siz
-          for b = 1:siz
-            Y(end+1:end+max(floor(Z(a,b)*1000),1)) = a;
-            X(end+1:end+max(floor(Z(a,b)*1000),1)) = b;
-          end
-        end
-        Z = [Y' X'];
-        RoiData(i).RFmu = mean(Z); RoiData(i).RFsigma = cov(Z);
+        % Z = RoiData(i).RF;
+        % Y = []; X = [];
+        % for a = 1:siz
+        %   for b = 1:siz
+        %     Y(end+1:end+max(floor(Z(a,b)*1000),1)) = a;
+        %     X(end+1:end+max(floor(Z(a,b)*1000),1)) = b;
+        %   end
+        % end
+        % Z = [Y' X'];
+        % RoiData(i).RFmu = mean(Z); RoiData(i).RFsigma = cov(Z);
 
-        CenterPosition(i,:) = [RoiData(i).RFmu];
-        CenterVariance(i,:) = [RoiData(i).RFsigma(1,1) RoiData(i).RFsigma(2,2)];
+        % CenterPosition(i,:) = [RoiData(i).RFmu];
+        % CenterVariance(i,:) = [RoiData(i).RFsigma(1,1) RoiData(i).RFsigma(2,2)];
+
+        RoiData(i).RFmu(1) = find(AnalysedData.pValues(i,1:7) == min(AnalysedData.pValues(i,1:7)));
+        RoiData(i).RFmu(2) = find(AnalysedData.pValues(i,8:14) == min(AnalysedData.pValues(i,8:14)));
       else
         RoiData(i).RFmu(1) = find(mean(RoiData(i).XCor') == max(mean(RoiData(i).XCor')));
         RoiData(i).RFmu(2) = RoiData(i).RFmu(1);  
@@ -332,6 +342,6 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
   xlswrite([header.FileName(1:end-4) '.xlsx'],c,'ROI Responses');
   xlswrite([header.FileName(1:end-4) '.xlsx'],d,'pValues');
 
-  PlotRoiData(header.FileName);
+  % PlotRoiData(header.FileName);
 
 end

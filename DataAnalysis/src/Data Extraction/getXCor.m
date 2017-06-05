@@ -15,7 +15,7 @@ for i = 1:stimCount
 	end
 end
 
-for r = 1:RoiCount
+parfor r = 1:RoiCount
 	for i = 1:stimCount
 		for j = 1:reps
 			mu(i,j) = mean(AnalysedData.dFF0(r,S(i,critWindow*(j-1)+1:critWindow*j)));

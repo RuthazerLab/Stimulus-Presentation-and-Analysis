@@ -35,7 +35,7 @@ end
 % two sets: respnding and not responding
 if(handles.toggleValue == 1 || handles.toggleValue == 3)
 
-	L = c(t,:) > 0.99;
+	L = c(t,:) > 0.9999;
 
 	x2 = x(~L);
 	y2 = y(~L);
@@ -54,8 +54,6 @@ if(handles.prevPlot)
 	handles.prevView = get(gca,'view');
 end
 
-figure(1);
-
 % Plots two sets of coordinates with colour values.
 if(length(c) > 0)
 
@@ -64,9 +62,9 @@ if(length(c) > 0)
 		x(end+1) = x(end); y(end+1) = y(end); z(end+1) = z(end); c(t,end+1) = c(t,end);
 	end	
 	if(Single_Roi)
-		scatter3(X(n),Y(n),Z(n),100,CC,'filled','d');
+		scatter3(X(n),Y(n),Z(n),10,CC,'filled','d');
 	end
-	scatter3(x,y,z,50,c(t,:),'filled'); hold on;
+	scatter3(x,y,z,10,c(t,:),'filled'); hold on;
 
 else
 
@@ -75,7 +73,7 @@ else
 end
 
 if(handles.toggleValue == 1 || handles.toggleValue == 3)
-	handles.axes1 = scatter3(x2,y2,z2,5,c2(t,:),'filled');
+	handles.axes1 = scatter3(x2,y2,z2,1,c2(t,:),'filled');
 end
 
 hold off;
