@@ -218,7 +218,7 @@ for i = 1:length(ran)
 end
 
 % Pause 10 (1+9) seconds to set baseline
-% pause(9); 
+pause(9); 
 
 if(typ == 5)  % Special presentaton for moving bars
 

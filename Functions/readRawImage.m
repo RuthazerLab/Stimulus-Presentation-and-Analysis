@@ -16,7 +16,7 @@ function I = readRawImage(fileName, imageSize, imageNumber)
 	lengthSize = imageSize^0.5;
 	if(mod(lengthSize,1) ~= 0)
 		disp('Image is not square');
-		I = null(imaegSize);
+		I = null(imageSize);
 		return;
 	end
 
