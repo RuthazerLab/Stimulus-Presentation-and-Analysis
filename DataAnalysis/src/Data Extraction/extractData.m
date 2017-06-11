@@ -51,11 +51,11 @@ function header = extractData(Folder, ImageData)
       javaaddpath(jarDir);
 
       [header1 ImageData] = getTimeSeries(Folder);
-      [header correlated] = analyseTimeSeries(header1, ImageData);
+      header = analyseTimeSeries(header1, ImageData);
 
     case 2  % Analyse data from ImageData
 
-      [header correlated] = analyseTimeSeries(Folder, ImageData);
+      header = analyseTimeSeries(Folder, ImageData);
 
     otherwise
 
@@ -82,6 +82,7 @@ function [header ImageData] = getTimeSeries(Folder)
   javaaddpath(fullfile(jarDir,'MorphoLibJ_-1.3.1.jar'));
   javaaddpath(fullfile(jarDir,'ij-1.51n.jar'));
   import ij.process.*;
+  import ij.*;
 
   % Extract experiment data from Experiment.xml file
   MetaData      = xml2struct(fullfile(Folder,'Experiment.xml'));
@@ -104,14 +105,17 @@ function [header ImageData] = getTimeSeries(Folder)
   ImagesPerSlice = FrameCount / (StepCount + FlyBackFrames);
 
   % Get projected Images for each slice
-  [Average_Images tform] = zProjReg(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
-  % Average_Images = zProj3(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
+  % [Average_Images tform] = zProjReg(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
+  Average_Images = zProj3(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
+
+  for Slice = 1:StepCount
+    imwrite(suint16(Average_Images(:,:,Slice)),fullfile(Folder,['Slice' int2str(Slice) '.tif']),'tif');
+  end
 
   % Loop through each slice
   for Slice = 1:StepCount
-    
-    % Save slice and then open it in ImageJ
-    imwrite(suint16(Average_Images(:,:,Slice)),fullfile(Folder,['Slice' int2str(Slice) '.tif']),'tif');
+   
+    % Get ROIs and initialize their respective rectangular regions
     IJ.run('Open...', ['path=[' Folder '\Slice' int2str(Slice) '.tif]']);
     imp = WindowManager.getCurrentImage;
 
@@ -119,19 +123,19 @@ function [header ImageData] = getTimeSeries(Folder)
     K = plugin.frame.RoiManager.getRoiManager;
 
     % Image analysis
-    ij.IJ.run('Subtract Background...', 'rolling=7 stack');
-    ij.IJ.run('Gaussian Blur...', 'sigma=1');
-    ij.IJ.run('Enhance Contrast', 'saturated=0.35');
+    IJ.run('Subtract Background...', 'rolling=7 stack');
+    IJ.run('Gaussian Blur...', 'sigma=1');
+    IJ.run('Enhance Contrast', 'saturated=0.35');
     imp = WindowManager.getCurrentImage;
     imp.setProcessor( inra.ijpb.morphology.Morphology.whiteTopHat( getChannelProcessor(imp), inra.ijpb.morphology.strel.DiskStrel.fromRadius(6) ) );
-    ij.IJ.setAutoThreshold(imp,'Mean dark');
-    ij.IJ.run('Convert to Mask');
-    ij.IJ.run('Watershed');
-    ij.IJ.run('Remove Outliers...', 'radius=4 threshold=50 which=Dark');
-    ij.IJ.run('Analyze Particles...', 'clear add stack');
-    ij.IJ.run('Set Measurements...', 'mean redirect=None decimal=3');
+    IJ.setAutoThreshold(imp,'Mean dark');
+    IJ.run('Convert to Mask');
+    IJ.run('Watershed');
+    IJ.run('Remove Outliers...', 'radius=4 threshold=50 which=Dark');
+    IJ.run('Analyze Particles...', 'clear add stack');
+    IJ.run('Set Measurements...', 'mean redirect=None decimal=3');
     K.runCommand('save',fullfile(Folder,'RoiSet.zip'));    % Save ROI data
-    ij.IJ.run('Close All'); 
+    % IJ.run('Close All'); 
 
     % Get coordinates from previously saved ROI data
     Coords = getRoiCoords(fullfile(Folder,'RoiSet.zip'));
@@ -145,15 +149,12 @@ function [header ImageData] = getTimeSeries(Folder)
     delete(fullfile(Folder,'RoiSet.zip'));
     delete(fullfile(Folder,['Slice' int2str(Slice) '.tif']));
 
-    ImageData = struct();
-    % Save Roi Coordinates in struct
+     % Save Roi Coordinates in struct
     ImageData(Slice) = struct('Slice', Slice, 'Results', [], 'NumOfROIs', length(CoordinateCenter(:,1)), ...
       'RoiCoordinates', transpose(CoordinateCenter),'Average',Average_Images(:,:,Slice), 'XBounds',[],'YBounds',[]);
+        R = K.getRoisAsArray;
+        Results = zeros(ImagesPerSlice,length(R));
 
-
-    % Get ROIs and initialize their respective rectangular regions
-    R = K.getRoisAsArray;
-    Results = zeros(ImagesPerSlice,length(R));
     for k = 1:length(R)
       XBound(k,1:2) = [max(R(k).getBounds.x,1) min(R(k).getBounds.x+R(k).getBounds.width,512)];
       YBound(k,1:2) = [max(R(k).getBounds.y,1) min(R(k).getBounds.y+R(k).getBounds.height,512)];
@@ -178,18 +179,15 @@ function [header ImageData] = getTimeSeries(Folder)
   [Path ExperimentName] = fileparts(Folder);
   fileName = [ExperimentName '.mat'];
 
-  % Removing "noisy" frames.
-  excludeIndices = [];
-
   header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', ...
-    ImagesPerSlice, 'fps', fps, 'exInd', excludeIndices,'FlyBackFrames',FlyBackFrames, ...
+    ImagesPerSlice, 'fps', fps,'FlyBackFrames',FlyBackFrames, ...
     'ImageWidth',ImageWidth,'ImageHeight',ImageHeight,'fieldSize',fieldSize,'zScale',zScale,'zStart',zStart);
   save(fullfile(Folder,fileName), 'header', 'ImageData');
 
 end
 
 
-function [header correlated] = analyseTimeSeries(header, ImageData)
+function header = analyseTimeSeries(header, ImageData)
 
   Folder = header.DataPath;
   filename = header.FileName;
@@ -261,86 +259,12 @@ function [header correlated] = analyseTimeSeries(header, ImageData)
     'FlyBackFrames', header.FlyBackFrames);
 
   getXCor;
-
-  try
-
-    for i = 1:length(RoiData)
-      for j = 1:length(RoiData)
-        temp = corrcoef(AnalysedData.dFF0(i,:),AnalysedData.dFF0(j,:));
-        AnalysedData.XCor(i,j) = temp(2,1);
-      end
-    end
-    correlated = true;
-    for i = 1:length(RoiData)
-      RoiData(i).ControlResponse = StimulusData.Responses(1,i);
-
-      if(StimulusData.Configuration.Type == 1)
-        siz = sqrt(StimulusData.Configuration.StimuliCount-1);
-        RoiData(i).RF = reshape(StimulusData.Responses(2:end,i),[siz siz]);
-
-      elseif(StimulusData.Configuration.Type == 2)
-        siz = (StimulusData.Configuration.StimuliCount-1)/2;
-        Q = ones(siz,siz);
-
-        for j = 1:siz
-          Q(j,:) = Q(j,:).*repmat(1-AnalysedData.pValues(i,j),[1 siz]);
-          Q(:,j) = Q(:,j).*repmat(1-AnalysedData.pValues(i,j+siz),[siz 1]);
-        end
-        
-        RoiData(i).RF = Q;
-      end
-      if(StimulusData.Configuration.Type == 1 || StimulusData.Configuration.Type == 2)
-
-        % Z = RoiData(i).RF;
-        % Y = []; X = [];
-        % for a = 1:siz
-        %   for b = 1:siz
-        %     Y(end+1:end+max(floor(Z(a,b)*1000),1)) = a;
-        %     X(end+1:end+max(floor(Z(a,b)*1000),1)) = b;
-        %   end
-        % end
-        % Z = [Y' X'];
-        % RoiData(i).RFmu = mean(Z); RoiData(i).RFsigma = cov(Z);
-
-        % CenterPosition(i,:) = [RoiData(i).RFmu];
-        % CenterVariance(i,:) = [RoiData(i).RFsigma(1,1) RoiData(i).RFsigma(2,2)];
-
-        RoiData(i).RFmu(1) = find(AnalysedData.pValues(i,1:7) == min(AnalysedData.pValues(i,1:7)));
-        RoiData(i).RFmu(2) = find(AnalysedData.pValues(i,8:14) == min(AnalysedData.pValues(i,8:14)));
-      else
-        RoiData(i).RFmu(1) = find(mean(RoiData(i).XCor') == max(mean(RoiData(i).XCor')));
-        RoiData(i).RFmu(2) = RoiData(i).RFmu(1);  
-      end
-
-    end
-
-  end
+  getResponsive;
 
   % Save final analysed data
   save(datafile, 'header','AnalysedData','StimulusData','RoiData');
 
-  temp = {'Random Squares'; 'RF Bars';'Brightness Levels'; 'Spatial Frequency'; 'Direction'; 'Orientation'};
-  StimulusData.Configuration.Type = temp{StimulusData.Configuration.Type};
-
-  a = [{'Times','Frame','Stimulus'};num2cell(StimulusData.Raw(:,2)),num2cell(time2Frame(StimulusData.Raw(:,2),AnalysedData)),num2cell(StimulusData.Raw(:,3))];
-  b = [fieldnames(StimulusData.Configuration) struct2cell(StimulusData.Configuration)];
-
-  X = [];
-
-  for i = 1:length(RoiData)
-    X(:,i) = mean(RoiData(i).XCor');
-  end
-
-  c = [{''},num2cell(sort(uniqueElements(StimulusData.Raw(:,3))));num2cell([[1:length(RoiData)]' X'])];
-  d = [{''},num2cell(sort(uniqueElements(StimulusData.Raw(find(StimulusData.Raw(:,3)),3)))); num2cell([[1:length(RoiData)]' AnalysedData.pValues])];
-
-  e = [fieldnames(header) struct2cell(header)];
-
-  xlswrite([header.FileName(1:end-4) '.xlsx'],b,'MetaData');
-  xlswrite([header.FileName(1:end-4) '.xlsx'],e,'MetaData','D1');
-  xlswrite([header.FileName(1:end-4) '.xlsx'],a,'Stimulus Times');
-  xlswrite([header.FileName(1:end-4) '.xlsx'],c,'ROI Responses');
-  xlswrite([header.FileName(1:end-4) '.xlsx'],d,'pValues');
+  saveDataXLS;
 
   % PlotRoiData(header.FileName);
 

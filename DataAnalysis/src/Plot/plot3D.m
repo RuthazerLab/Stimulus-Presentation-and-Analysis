@@ -35,7 +35,7 @@ end
 % two sets: respnding and not responding
 if(handles.toggleValue == 1 || handles.toggleValue == 3)
 
-	L = c(t,:) > 0.9999;
+	L = c(t,:) > 0.99;
 
 	x2 = x(~L);
 	y2 = y(~L);
@@ -62,9 +62,9 @@ if(length(c) > 0)
 		x(end+1) = x(end); y(end+1) = y(end); z(end+1) = z(end); c(t,end+1) = c(t,end);
 	end	
 	if(Single_Roi)
-		scatter3(X(n),Y(n),Z(n),10,CC,'filled','d');
+		scatter3(X(n),Y(n),Z(n),100,CC,'filled','d');
 	end
-	scatter3(x,y,z,10,c(t,:),'filled'); hold on;
+	scatter3(x,y,z,50,c(t,:),'filled'); hold on;
 
 else
 
@@ -85,7 +85,7 @@ set(get(gca,'YAxis'),'TickValues',[0:512/4:512]);
 set(get(gca,'XAxis'),'TickLabels',{0:20:80});
 set(get(gca,'YAxis'),'TickLabels',{0:20:80});
 
-axis([0 512 0 512 0 handles.RoiData(length(handles.RoiData)).Coordinates(3)]); 
+axis([0 512 0 512 1 handles.RoiData(length(handles.RoiData)).Coordinates(3)]); 
 
 axis ij; set(gca,'view',handles.prevView);
 

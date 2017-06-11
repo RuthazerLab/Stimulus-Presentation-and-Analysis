@@ -145,7 +145,7 @@ handles.ssiz = str2num(handles.edit11.String);
 
 % Names of the different stimulus options
 handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'RF Bars';
-'Brightness Levels'; 'Spatial Frequency'; 'Direction'; 'Orientation'};
+'Brightness Levels'; 'Spatial Frequency'; 'Direction'; 'Orientation';'Radii'};
 handles.text1.set('Visible','off'); handles.edit1.set('Visible','off');
 handles.text2.set('Visible','off'); handles.edit2.set('Visible','off');
 handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
@@ -258,6 +258,7 @@ case 5  % Direction
   handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
   handles.text2.set('String', 'Angles:'); handles.edit2.set('String',F);
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
+  handles.edit12.set('String','1');
 
 case 6 % Orientation
 
@@ -271,6 +272,17 @@ case 6 % Orientation
   handles.text1.set('String', 'Repititions'); handles.edit1.set('String','1');
   handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
   handles.text2.set('String', 'Angles:'); handles.edit2.set('String',F);
+  handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
+
+case 7 % Radii
+
+  handles.edit2.set('style','edit');
+  handles.edit2.Position(3) = 7.5;
+
+  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
+  handles.text1.set('String', 'Repititions:'); handles.edit1.set('String','10');
+  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
+  handles.text2.set('String','Levels'); handles.edit2.set('String','10');
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
  
 end
@@ -340,6 +352,12 @@ case 0    % Align
   else
     Sign = -1;
   end
+  try
+    s = daq.createSession('ni');
+    addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
+  catch Last_Error
+    disp(getReport(Last_Error));
+  end
   figure('NumberTitle','off','MenuBar','none','toolbar','none','color',[Background, Background, Background],'DockControls','off');
   imshow(square({1, handles.ssiz, 1, handles.height, handles.width, handles.buffer,Sign,Background,handles.Contrast}),'border','tight','parent',gca);
   uiwait();
@@ -378,6 +396,12 @@ case 5    % Direction
 case 6    % Orientation
 
   num = handles.factors{handles.edit2.Value};
+  fois = str2num(handles.edit1.String);
+  variables = [fois typ num];
+
+case 7    % Radii
+
+  num = str2num(handles.edit2.String);
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
 
@@ -492,10 +516,10 @@ function handles = updateTime(hObject, eventdata, handles)
     L = L * (str2num(handles.edit2.String{handles.edit2.Value})^2+1);
   case 2
     L = L * (str2num(handles.edit2.String{handles.edit2.Value})*2+1);
-  case 3
+  case {3,7}
     L = L * (str2num(handles.edit2.String)+1);  
   case 4
-     L = L * (length(compFact(str2num(handles.edit9.String)))-2);
+     L = L * length(compFact(str2num(handles.edit9.String)));
   case {5,6}
     L = L * (360/str2num(handles.edit2.String{handles.edit2.Value})+1);
   end

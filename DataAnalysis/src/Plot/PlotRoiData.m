@@ -202,6 +202,21 @@ function pushbutton1_Callback(hObject, eventdata, handles, file)
 	handles.text6.String = ['Times: ' num2str(handles.Times(1)) ' to ' num2str(handles.Times(end))];
 	handles.text6.Visible = 'on';
 	
+	[RC TC] = size(handles.AnalysedData.dFF0);
+
+	for i = 1:RC
+		handles.cc(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
+		handles.RFmu(i,:) = handles.RoiData(i).RFmu;
+	end
+
+	handles.ccV = repmat(handles.RFmu(:,1),[1 TC]);
+	handles.ccH = repmat(handles.RFmu(:,2),[1 TC]);
+	handles.ccVT = zeros(RC,TC);
+	handles.ccHT = zeros(RC,TC);
+	Thresh = handles.cc(:,1)>0.99;
+	handles.ccVT(Thresh,:) = repmat(handles.RFmu(Thresh,1),[1 TC]);
+	handles.ccHT(Thresh,:) = repmat(handles.RFmu(Thresh,2),[1 TC]);
+
 	% Plots data for all slices
 	plot3D(hObject,handles,t); handles.prevPlot = 1;
 
@@ -219,6 +234,7 @@ function listbox1_Callback(hObject, eventdata, handles)
 	% Finds which slice and time is currently selected
 	nowslice = get(handles.listbox1,'value') - 1;
 	t = handles.CurrentTime;
+	handles.CurrentRoi = 0;
 
 	% Updates which slice is selected.
 	handles.CurrentSlice = nowslice;
@@ -400,8 +416,15 @@ function slider1_Callback(hObject, eventdata, handles)
 
 	updateTime(hObject,eventdata,handles);
 
+	nowROI = get(handles.listbox2,'value') - 1;
+	nowslice = handles.CurrentSlice;
+
 	% Plots updated time data
-	listbox1_Callback(hObject, eventdata, handles);
+	if(nowslice > 0)
+		plotSlice(hObject,handles,t,nowslice); handles.prevPlot = 0;
+	else 
+		plot3D(hObject, handles,t); handles.prevPlot = 1;
+	end
 
 
 	% Update ROI list to only responding ROIs
@@ -420,8 +443,6 @@ function radiobutton1_Callback(hObject, eventdata, handles)
 toggleValue = handles.radiobutton1.get('Value') + 2*handles.radiobutton2.get('Value');
 handles.pushbutton8.set('Visible','off');
 
-[RC TC] = size(handles.AnalysedData.dFF0);
-
 switch toggleValue
 
 % No setting selected
@@ -432,58 +453,24 @@ case 0
 % Thresholding is selected
 case 1
 
-	% Caluclates thresholded data at first instance and saves results
-	if(isempty(handles.cc))
+	c = handles.cc;
 
-		for i = 1:RC
-			c(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
-		end
-		handles.cc = c;
-	else
-		c = handles.cc;
-	end
-
-% Heatmap is selected
 case 2
 
 	handles.pushbutton8.set('Visible','on');
-
-	% Sets colour to center to receptive field (yellow for lower and blue for higher verticle centers)
-	for i = 1:RC
-		colour = handles.RoiData(i).RFmu;
-		try
-			c(i,1) = colour(handles.Response_Center+1);
-		catch
-			c(i,1) = 0;
-		end
+	if(handles.Response_Center+1 == 1)
+		c = handles.ccV;
+	else
+		c = handles.ccH;
 	end
 
-	c = repmat(c,[1 TC]);
-
-% Both Heatmap and Thresholding are selected
 case 3
 
 	handles.pushbutton8.set('Visible','on');
-
-	if(isempty(handles.cc))
-		for i = 1:RC
-			c(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
-		end
+	if(handles.Response_Center+1 == 1)
+		c = handles.ccVT;
 	else
-		c = handles.cc;
-	end
-
-	for i = 1:RC
-		colour = handles.RoiData(i).RFmu;
-		for j = 1:TC
-			if(c(i,j) > 0.9999)
-				try
-					c(i,j) = colour(handles.Response_Center+1);
-				catch
-					c(i,j) = 0;
-				end
-			end
-		end
+		c = handles.ccHT;
 	end
 
 end
@@ -523,53 +510,24 @@ case 0
 
 case 1
 
-	if(isempty(handles.cc))
-		for i = 1:RC
-			c(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
-		end
-	else
-		c = handles.cc;
-	end
+	c = handles.cc;
 
 case 2
 
 	handles.pushbutton8.set('Visible','on');
-	for i = 1:RC
-		colour = handles.RoiData(i).RFmu;
-		try
-			
-			c(i,1) = colour(handles.Response_Center+1);
-		catch
-			c(i,1) = 0;
-		end
+	if(handles.Response_Center+1 == 1)
+		c = handles.ccV;
+	else
+		c = handles.ccH;
 	end
-
-	c = repmat(c,[1 TC]);
 
 case 3
 
 	handles.pushbutton8.set('Visible','on');
-	if(isempty(handles.cc))
-		for i = 1:RC
-			c(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
-		end
-		handles.cc = c;
+	if(handles.Response_Center+1 == 1)
+		c = handles.ccVT;
 	else
-		c = handles.cc;
-	end
-
-	for i = 1:RC
-		colour = handles.RoiData(i).RFmu;
-		for j = 1:TC
-			if(c(i,j) > 0.9999)
-				try
-					
-					c(i,j) = colour(handles.Response_Center+1);
-				catch
-					c(i,j) = 0;
-				end
-			end
-		end
+		c = handles.ccHT;
 	end
 
 end
@@ -750,7 +708,7 @@ end
 if(handles.CurrentSlice == 0)
 	handles.text3.String = 'Frame: ';
 	handles.text4.String = t;
-	handles.text6.String = ['Times: ' num2str(handles.Times(1)) ' to ' num2str(handles.Times(end))];
+	handles.text6.String = ['Times: ' num2str(round(handles.Times(1),1)) ' to ' num2str(round(handles.Times(end),1))];
 	handles.text6.Visible = 'on';
 else
 	handles.text3.String = 'Time: ';

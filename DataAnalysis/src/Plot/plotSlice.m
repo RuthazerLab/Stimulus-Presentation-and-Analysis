@@ -91,7 +91,7 @@ if(handles.toggleValue == 1 || handles.toggleValue == 3)
 end
 
 hold off;
-
+set(gca,'CLim',[0 5]);
 axis([0 handles.header.ImageWidth 0 handles.header.ImageHeight]); axis ij;
 
 try

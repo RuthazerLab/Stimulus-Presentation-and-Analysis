@@ -24,7 +24,7 @@ function I = circle(varargin)   % Called from stimulusFull.m
   if(length(variables) == 6)
     I = zeros(height,width);
   elseif(length(variables) == 7)
-    I = variables{7};
+    I = ones(height,width)*variables{7};
   end
 
   for i = 1:height
