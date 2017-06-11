@@ -170,6 +170,22 @@ case 6 % Orientation Selectivity
 
   num = 180/num;
 
+case 7 % Radii
+
+  % Set stimulus-specific functions and variables
+  number2data = @(vars) vars{3}*vars{1}/vars{2};
+  vars = {0,num,height/2};
+  conversion = @(i,num) i+1;
+  Background = 0;
+
+  % Load stimuli into matrix
+  for i = 1:num+1
+    vars{1} = i-1;
+    radius = number2data(vars);
+    I(:,:,i) = circle({1,width,height,ssiz,buff,radius,Background});
+  end
+
+
 end 
 
 % Display blank background
