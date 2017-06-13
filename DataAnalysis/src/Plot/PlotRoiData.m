@@ -346,8 +346,20 @@ function listbox2_Callback(hObject, eventdata, handles)
 			if(handles.StimulusData.Configuration.Type == 1 || handles.StimulusData.Configuration.Type == 2)
 				getRFMap(n,handles.RoiData,handles.StimulusData.Configuration);
 				ax = gca;
+			elseif(handles.StimulusData.Configuration.Type == 5)
+				R = [handles.AnalysedData.pValues(n,end) handles.AnalysedData.pValues(n,:)];
+				Theta = sort(uniqueElements(handles.StimulusData.Raw(:,3)))*pi/180;
+				scatter(cos(Theta).*(1-R),sin(Theta).*(1-R),50,max(0,0.1-R),'filled'); hold on;
+				plot(cos(Theta).*(1-R),sin(Theta).*(1-R)); hold off;
+				set(gca,'XAxisLocation','origin')
+				set(gca,'YAxisLocation','origin')
+				set(gca,'XTick',[-1 -0.5 0 0.5 1]);
+				set(gca,'YTick',[-1 -0.5 0 0.5 1]);
+				ylim([-1.1 1.1])
+				xlim([-1.1 1.1])
+				axis square
 			else
-				bar(handles.RoiData(n).XCor);
+				bar(1-handles.AnalysedData.pValues(n,:));
 			end
 		else		
 			YMAX = 20*median(handles.AnalysedData.dFF0(n,:));
@@ -634,8 +646,22 @@ if(handles.toggleValue == 2 || handles.toggleValue == 3)
 		getRFMap(n,handles.RoiData,handles.StimulusData.Configuration);
 		colorbar;
 		ax = gca;
+	elseif(handles.StimulusData.Configuration.Type == 5)
+		R = max((1-[handles.AnalysedData.pValues(n,end) handles.AnalysedData.pValues(n,:)])-0.9,0)/0.1;
+		Theta = sort(uniqueElements(handles.StimulusData.Raw(:,3)))*pi/180;
+		scatter(cos(Theta).*(R),sin(Theta).*(R),50,'filled'); hold on;
+		plot(cos(Theta).*(R),sin(Theta).*(R)); hold off;
+		set(gca,'XAxisLocation','origin')
+		set(gca,'YAxisLocation','origin')
+		set(gca,'XTick',[-1 -0.5 0 0.5 1]);
+		set(gca,'YTick',[-1 -0.5 0 0.5 1]);
+		set(gca,'XTickLabel',{1, 0.95,'', 0.95 1})
+		set(gca,'YTickLabel',{1, 0.95, '', 0.95 1})
+		ylim([-1.1 1.1])
+		xlim([-1.1 1.1])
+		axis square
 	else
-		bar(handles.RoiData(n).XCor);
+		bar(1-handles.AnalysedData.pValues(n,:))
 	end
 else		
 	YMAX = 20*median(handles.AnalysedData.dFF0(n,:));
