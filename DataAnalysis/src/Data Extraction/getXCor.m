@@ -18,13 +18,17 @@ end
 for r = 1:RoiCount
 	for i = 1:stimCount
 		for j = 1:reps
-			mu(i,j) = mean(AnalysedData.dFF0(r,S(i,critWindow*(j-1)+1:critWindow*j)));
+			if(S(i,critWindow*j) > size(AnalysedData.dFF0,2))
+				disp(['Stimulus ' int2str(i) 'x' int2str(j) ' has no image data']);
+			else
+				mu(i,j) = mean(AnalysedData.dFF0(r,S(i,critWindow*(j-1)+1:critWindow*j)));
+			end
 		end
 	end
 	RoiData(r).XCor = mu;
 	StimulusData.Responses(:,r) = mean(mu');
 	for j = 2:(StimulusData.Configuration.StimuliCount)
-		[h p(r,j-1) ci stats] = ttest2(RoiData(r).XCor(1,:),RoiData(r).XCor(j,:),'tail','left');
+		[h p(r,j-1) ci stats] = ttest2(RoiData(r).XCor(1,find(RoiData(r).XCor(1,:))),RoiData(r).XCor(j,find(RoiData(r).XCor(j,:))),'tail','left');
 	end
 end
 

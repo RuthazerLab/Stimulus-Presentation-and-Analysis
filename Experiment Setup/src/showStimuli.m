@@ -114,7 +114,7 @@ case 4  % Spatial Frequency
   % end
   [I J] = SpatialFrequencyAngled(0,height,width);
 
-  Hz = 0.05;
+  Hz = 5;
 
 case 5 % Displays bar in specified direction and width
 
@@ -268,11 +268,11 @@ elseif(typ == 4)
       set(hImage,'CData',I(:,:,ran(j)));
       pause(lag2);
       data(j,2) = toc(start);
-      for i = 1:lag1*floor(1/Hz)
+      for i = 1:lag1*floor(Hz)
           set(hImage,'CData',J(:,:,ran(j)));
-          pause(Hz/2);
+          pause(1/(2*Hz));
           set(hImage,'CData',I(:,:,ran(j)));
-          pause(Hz/2);
+          pause(1/(2*Hz));
       end
     end
   end
