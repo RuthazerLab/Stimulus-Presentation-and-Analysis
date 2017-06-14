@@ -19,8 +19,8 @@ I = ones(BigL,BigL,num);
 J = ones(BigL,BigL,num);
 for i = 1:num
 	for j = 1:BigL
-	  I(:,j,i) = sin(2*pi*j*F(i)/width);
-	  J(:,j,i) = sin(pi+2*pi*j*F(i)/width);
+	  I(:,j,i) = 0.5+0.5*sin(2*pi*j*F(i)/width);
+	  J(:,j,i) = 0.5+0.5*sin(pi+2*pi*j*F(i)/width);
 	end
 end
 

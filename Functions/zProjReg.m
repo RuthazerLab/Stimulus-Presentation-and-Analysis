@@ -19,7 +19,7 @@ H = ImagesPerSlice*(StepCount+FlyBackFrames);
 for inc = 1:20
 
 	% Initialize List
-	List = zeros([1 ImageSize StepCount]);
+	List = zeros([SL SL StepCount]);
 
 	% Add each image to List
 	for i = (inc-1)*H/20+1:H*inc/20
@@ -35,25 +35,14 @@ for inc = 1:20
 	      	continue;
 	    end
 
-		List(:,:,b) = List(:,:,b) + fread(fid,[1 ImageSize],'uint16');
+		List(:,:,b) = List(:,:,b) + reshape(fread(fid,[1 ImageSize],'uint16'),[512 512]);
 
 		waitbar(i/(ImagesPerSlice*(StepCount+FlyBackFrames)),h,[int2str(i) '/' int2str(ImagesPerSlice*(StepCount+FlyBackFrames))]);
 
 	end
 
 	% Divide by number of images to get mean
-	List(:,:,1:end) = List(:,:,1:end) / ImagesPerSlice;
-
-	% Reshape List to SL x SL
-	AV = zeros(SL,SL);
-
-	for j = 1:StepCount
-		for i = 0:SL:length(List)-1
-			AV(i/SL+1,:,j) = List(1,i+1:i+SL,j);
-		end
-	end
-
-	I{inc} = AV;
+	I{inc} = List(:,:,1:end) / ImagesPerSlice;;
 
 end
 
