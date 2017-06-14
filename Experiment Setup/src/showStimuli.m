@@ -256,7 +256,7 @@ if(typ == 5)  % Special presentaton for moving bars
     end
   end
 
-elseif(typ == 4)
+elseif(typ == 4)  % Special Presentation for spatial frequency
 
   for j = 1:length(ran)
     if(ran(j) == 0)
