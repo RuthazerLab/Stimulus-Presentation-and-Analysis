@@ -89,7 +89,7 @@ case 3  % Display Brightness Levels
   Background = 0;
 
   % Load stimuli into matrix
-  for i = 1:num+1
+  for i = 1:num
     vars{1} = i;
     y = number2data(vars);
     I(:,:,i) = circle({y,width,height,ssiz,buff,radius,Background});
@@ -221,7 +221,6 @@ Props(2,:) = [Sign, height, width, buff,ssiz, Background];
 Pos = get(gcf,'Position');
 set(gcf,'Position',Pos + [0 0 0 25]);
 
-
 % Loop through each stimulus
 for i = 1:length(ran)
   vars{1} = ran(i);
@@ -277,22 +276,20 @@ elseif(typ == 4)  % Special Presentation for spatial frequency
     end
   end
 
-else    % All other stimuli
+else % All other stimuli
 
   for i = 1:length(ran)
     data(i,2) = toc(start);
-    % Presentation background as control
     if(ran(i) == 0)
       pause(lag1);
       data(i,3) = 0;
     else
-      tic;
-      imshow(I(:,:,conversion(ran(i),num)),'border','tight','Parent',gca); % Show stimulus and convert stimulus number into matrix index
-      pause(max(lag1-toc,0)); % Accounts for image presentation time in lag 
+      set(hImage,'CData',(I(:,:,conversion(ran(i),num)))); % Show stimulus and convert stimulus number into matrix index
+      pause(lag1);
     end
     tic;
-    imshow(Background*White,'border','tight','Parent',gca);
-    pause(max(lag2-toc,0)); % Accounts for image presentation time in lag 
+    set(hImage,'CData',Background*White);
+    pause(lag2);
   end
 
 end
@@ -321,7 +318,7 @@ dlmwrite(file2,Props,'precision','%.3f');
 
 
 %% --- Random ordering of {0,1,....,num*fois}
-function ran = randomOrder(num, fois,d,typ)
+function ran = randomOrder(num,fois,d,typ)
 
 ran = datasample(repmat([0:num],[1 fois]),(num+1)*fois,'Replace',false);
 ran = transpose(ran);

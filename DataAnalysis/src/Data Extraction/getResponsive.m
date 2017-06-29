@@ -4,16 +4,14 @@ for i = 1:length(RoiData)
 
   waitbar(i/length(RoiData),h,'Getting Responses');
 
-  for j = 1:length(RoiData)
-    temp = corrcoef(AnalysedData.dFF0(i,:),AnalysedData.dFF0(j,:));
-    AnalysedData.XCor(i,j) = temp(2,1);
-  end
-
-  RoiData(i).ControlResponse = StimulusData.Responses(1,i);
+  % for j = 1:length(RoiData)
+  %   temp = corrcoef(AnalysedData.dFF0(i,:),AnalysedData.dFF0(j,:));
+  %   AnalysedData.XCor(i,j) = temp(2,1);
+  % end
 
   if(StimulusData.Configuration.Type == 1)
     siz = sqrt(StimulusData.Configuration.StimuliCount-1);
-    RoiData(i).RF = reshape(StimulusData.Responses(2:end,i),[siz siz]);
+    RoiData(i).RF = reshape(AnalysedData.pValues(i,:),[siz siz]);
 
   elseif(StimulusData.Configuration.Type == 2)
     siz = (StimulusData.Configuration.StimuliCount-1)/2;
@@ -45,7 +43,7 @@ for i = 1:length(RoiData)
     RoiData(i).RFmu(1) = find(AnalysedData.pValues(i,1:7) == min(AnalysedData.pValues(i,1:7)));
     RoiData(i).RFmu(2) = find(AnalysedData.pValues(i,8:14) == min(AnalysedData.pValues(i,8:14)));
   else
-    RoiData(i).RFmu(1) = find(mean(RoiData(i).XCor') == max(mean(RoiData(i).XCor')));
+    RoiData(i).RFmu(1) = find(AnalysedData.pValues(i,:) == min(AnalysedData.pValues(i,:)));
     RoiData(i).RFmu(2) = RoiData(i).RFmu(1);  
   end
 end

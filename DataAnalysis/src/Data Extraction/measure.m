@@ -1,53 +1,62 @@
-function Results = measure(fileName, ImagesPerSlice, ImageWidth, ImageHeight, Step, FlyBackFrames, XBounds, YBounds)
+function Results = measure(fileName, header, ImageData, tform)
+
+  Frames        = header.Frames;
+  ImageHeight   = header.ImageHeight;
+  ImageWidth    = header.ImageWidth;
+  Step          = header.Slices;
+  FlyBackFrames = header.FlyBackFrames;
 
   % Open raw data file
   fid = fopen(fileName,'r','l');
+  H = Frames*(Step+FlyBackFrames);
 
-  h = waitbar(1/(ImagesPerSlice*(Step+FlyBackFrames)),['1/' int2str(ImagesPerSlice*(Step+FlyBackFrames))], 'Name','Measuring');
 
   for Slice = 1:Step
-    RoiCount(Slice) = length(XBounds{Slice});
+    RoiCount(Slice) = ImageData(Slice).NumOfROIs;
   end
 
-  % Add each image to List
-  for ii = 1:ImagesPerSlice*(Step+FlyBackFrames)
+  [slicecount TSegs] = size(tform);
 
-    [a b] = mdivide(ii,Step+FlyBackFrames);
+  h = waitbar(1/(Frames*(Step+FlyBackFrames)),['1/' int2str(TSegs)], 'Name','Measuring');
 
-    if(FlyBackFrames == 0)
-      b = 1;
-      a = a - 1;
-    end
+  for inc = 1:TSegs
 
-    if(sum(b == [1:Step]) == 0)
-      fseek(fid,ImageWidth*ImageHeight*2,0);
-      continue;
-    end
-
-    pixels = fread(fid,[1 ImageHeight*ImageWidth],'uint16');
-
-    Slice = b;
-    Frame = a + 1;
-
-    YBound = YBounds{Slice};
-    XBound = XBounds{Slice};
-
-    count = zeros(1,RoiCount(Slice));
-    temp = count;
-
-    % Interates over each ROI's rectangle 
-    for k = 1:RoiCount(Slice)
-      for i = YBound(k,1):YBound(k,2)
-        for j = XBound(k,1):XBound(k,2)
-            count(k) = count(k) + 1; 
-            temp(k) = temp(k) + pixels((i-1)*ImageWidth+j);
-        end
+    % Calculate ROI pixels in registered images
+    for Slice = 1:Step
+      T = tform{Slice,inc};
+      A = ImageData(Slice).RoiMask;
+      for k = 1:RoiCount(Slice)
+        [a b] = mdivide(find(A(:,:,k)'),ImageHeight);
+        Coords = [a b];
+        TCoords = round(transformPointsInverse(T,Coords));
+        RoiMask{Slice,k} = min(max(TCoords(:,1)*ImageHeight+TCoords(:,2),1),ImageHeight*ImageWidth);
       end
     end
 
-    Result(Slice).Data(Frame,:) = temp./count;
+    % Measure each ROI value for this TSegment
+    for i = (inc-1)*H/TSegs+1:H*inc/TSegs
 
-    waitbar(ii/(ImagesPerSlice*(Step+FlyBackFrames)),h,[int2str(ii) '/' int2str(ImagesPerSlice*(Step+FlyBackFrames))]);
+      waitbar(i/(Frames*(Step+FlyBackFrames)),h,[int2str(inc) '/' int2str(TSegs)]);
+
+      [Frame Slice] = mdivide(i,Step+FlyBackFrames);
+
+      if(FlyBackFrames == 0)
+        Slice = 1;
+        Frame = a - 1;
+      end
+        
+      if(sum(Slice == [1:Step]) == 0)
+        fseek(fid,ImageWidth*ImageHeight*2,0);
+        continue;
+      end
+
+      pixels = fread(fid,[1 ImageHeight*ImageWidth],'uint16');
+
+      for k = 1:RoiCount(Slice)
+        Result(Slice).Data(Frame+1,k) = mean(pixels(RoiMask{Slice,k}));
+      end
+
+    end
   end
 
   Results = {};
