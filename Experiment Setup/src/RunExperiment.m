@@ -145,10 +145,11 @@ handles.ssiz = str2num(handles.edit11.String);
 
 % Names of the different stimulus options
 handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'RF Bars';
-'Brightness Levels'; 'Spatial Frequency'; 'Direction'; 'Orientation';'Radii'};
+'Brightness Levels'; 'Spatial Frequency'; 'Direction'; 'Orientation'; 'Radii'; 'Looming'};
 handles.text1.set('Visible','off'); handles.edit1.set('Visible','off');
 handles.text2.set('Visible','off'); handles.edit2.set('Visible','off');
 handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
+
 
 % Turn off warnings
 warning('off','images:initSize:adjustingMag');
@@ -284,7 +285,19 @@ case 7 % Radii
   handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
   handles.text2.set('String','Levels'); handles.edit2.set('String','10');
   handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
- 
+
+case 8 % Looming
+
+  handles.edit2.set('style','edit');
+  handles.edit2.Position(3) = 7.5;
+
+  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
+  handles.text1.set('String', 'Repititions:'); handles.edit1.set('String','10');
+  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
+  handles.text2.set('String','Min obj size (pixels)'); handles.edit2.set('String','10');
+  handles.text3.set('Visible','on'); handles.edit3.set('Visible','on');
+  handles.text3.set('String','radius/velocity (s)'); handles.edit3.set('String','2');
+
 end
 
 
@@ -352,12 +365,12 @@ case 0    % Align
   else
     Sign = -1;
   end
-  try
-    s = daq.createSession('ni');
-    addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
-  catch Last_Error
-    disp(getReport(Last_Error));
-  end
+%   try
+%     s = daq.createSession('ni');
+%     addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
+%   catch Last_Error
+%     disp(getReport(Last_Error));
+%   end
   figure('NumberTitle','off','MenuBar','none','toolbar','none','color',[Background, Background, Background],'DockControls','off');
   imshow(square({1, handles.ssiz, 1, handles.height, handles.width, handles.buffer,Sign,Background,handles.Contrast}),'border','tight','parent',gca);
   uiwait();
@@ -404,6 +417,13 @@ case 7    % Radii
   num = str2num(handles.edit2.String);
   fois = str2num(handles.edit1.String);
   variables = [fois typ num];
+
+case 8    % looming
+
+  num = str2num(handles.edit2.String);
+  fois = str2num(handles.edit1.String);
+  dv = str2num(handles.edit3.String);
+  variables = [fois typ num dv];
 
 end
   
@@ -526,6 +546,8 @@ function handles = updateTime(hObject, eventdata, handles)
 
   L = L + 10;
   [Minutes Seconds] = mdivide(L,60);
+  %[Minutes Seconds] = divide(L,60);
+  
   handles.text4.set('String',['Run Time: ' leftpad(Minutes,2) ':' leftpad(ceil(Seconds),2)]);
 
 

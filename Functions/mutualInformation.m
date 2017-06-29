@@ -2,7 +2,7 @@ function I = mutualInformation(RoiNumber)
 
 
 StimulusData = evalin('base','StimulusData');
-header = evalin('base','header');
+header 		 = evalin('base','header');
 AnalysedData = evalin('base','AnalysedData');
 
 StimCount = StimulusData.Configuration.StimuliCount;
