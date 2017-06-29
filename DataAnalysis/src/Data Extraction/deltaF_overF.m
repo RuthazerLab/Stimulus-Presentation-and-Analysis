@@ -21,7 +21,7 @@ h = waitbar(1/length(RoiData), 'Please Wait...', 'Name','Baselining');
 
 for i = 1:length(RoiData)
 	
-	% Raw data for each ROI
+	% Raw data for each ROI, 1 by FrameCount matrix
 	Trace = RoiData(i).Brightness;
 
 	waitbar(i/(length(RoiData)),h);

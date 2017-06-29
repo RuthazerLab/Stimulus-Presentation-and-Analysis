@@ -12,12 +12,8 @@ function FrameTimes = getTimeAxis(RoiData, CaptureTimes, Slices, FlyBackFrames)
 		waitbar(i/length(RoiData(1).Brightness),h);
 
 		for j = 1:length(RoiData)
-
-			try
+			% disp((i-1)*(Slices+FlyBackFrames)+RoiData(j).Coordinates(3));
 			T(i,j) = CaptureTimes((i-1)*(Slices+FlyBackFrames)+RoiData(j).Coordinates(3));
-			catch
-				disp(i);
-			end
 		end
 	end
 

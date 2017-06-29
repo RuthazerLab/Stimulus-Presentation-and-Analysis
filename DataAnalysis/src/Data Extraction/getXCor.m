@@ -1,6 +1,6 @@
 T = [time2Frame(StimulusData.Times,AnalysedData) StimulusData.Raw(:,3)];
 [RoiCount Times] = size(AnalysedData.dFF0);
-stimType 	= sort(uniqueElements(StimulusData.Raw(:,3)));
+stimType  = sort(uniqueElements(StimulusData.Raw(:,3)));
 stimCount = length(stimType);
 
 critWindow = ceil(header.FPS*2);
@@ -18,7 +18,7 @@ end
 for r = 1:RoiCount
 	for i = 1:stimCount
 		for j = 1:reps
-			if(S(i,critWindow*j) > size(AnalysedData.dFF0,2))
+			if(r == 1 && S(i,critWindow*j) > size(AnalysedData.dFF0,2))
 				disp(['Stimulus ' int2str(i) 'x' int2str(j) ' has no image data']);
 			else
 				mu(i,j) = mean(AnalysedData.dFF0(r,S(i,critWindow*(j-1)+1:critWindow*j)));
