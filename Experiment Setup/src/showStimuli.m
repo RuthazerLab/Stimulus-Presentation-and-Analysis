@@ -1,7 +1,7 @@
 function [data shade] = showStimuli(hObject, variables, handles)
 %%% ---- Support Functions for RunExperiment.m ---- %%
 
-% Initializes trigger through National Instrument's USB-6009 port ao1
+%Initializes trigger through National Instrument's USB-6009 port ao1
 try
   s = daq.createSession('ni');
   addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
@@ -16,13 +16,28 @@ fois = variables(1);        % Number of times stimulus is presented
 typ = variables(2);         % Type of stimulus presented
 num = variables(3);         % Length of display area in case of squares
 
-height  = handles.height;   % Height of image
-width = handles.width;      % Width of image
-buff = handles.buffer;      % Offset from bottom of screen
-ssiz = handles.ssiz;        % Size of display area
+%Looming stimulus: Add some variable definitions which are unique to this
+%stim. For example, rv_ratio is a user-defined variable which dictates the
+%apparent speed of the approaching disk (lower rv_ratio means higher
+%speed). d_screen is the distance between the fish's head and the screen,
+%used to calibrate the apparent velocity between setups (probably not that
+%important, but it's part of the equation governing looming stims).
+if typ == 8
+  rv_ratio = variables(4);
+  min_size = num;
+  maxtime = 5;
+  d_screen = 5;
+end
+
+
+
+height  = handles.height;       % Height of image
+width = handles.width;          % Width of image
+buff = handles.buffer;          % Offset from bottom of screen
+ssiz = handles.ssiz;            % Size of display area
 radius = handles.circleRadius;  % Radius of a circle
-lag1 = handles.lag1;        % Length of stimulus
-lag2 = handles.lag2;        % Length of pause
+lag1 = handles.lag1;            % Length of stimulus
+lag2 = handles.lag2;            % Length of pause
 
 Background = handles.Background;
 PlusMinusDifference = handles.Contrast;
@@ -89,7 +104,7 @@ case 3  % Display Brightness Levels
   Background = 0;
 
   % Load stimuli into matrix
-  for i = 1:num
+  for i = 1:num+1
     vars{1} = i;
     y = number2data(vars);
     I(:,:,i) = circle({y,width,height,ssiz,buff,radius,Background});
@@ -106,7 +121,7 @@ case 4  % Spatial Frequency
   % number2data = @(vars) vars{1};
   conversion = @(i,num) i;
 
-  % I = zeros(height,width,num*4); J = zeros(height,width,num*4);
+  % I = zeros(height,width,num*4); J = zeros(height,width,num*  4);
   % for theta = 45:45:180
   %   [temp1 temp2] = SpatialFrequencyAngled(theta,height,width);
   %   I(:,:,end+1:end+1+size(temp1,3)) = temp1;
@@ -175,17 +190,58 @@ case 7 % Radii
   % Set stimulus-specific functions and variables
   number2data = @(vars) vars{3}*vars{1}/vars{2};
   vars = {0,num,height/2};
-  conversion = @(i,num) i+1;
+  conversion = @(i,num) i;
   Background = 0;
 
   % Load stimuli into matrix
-  for i = 1:num+1
-    vars{1} = i-1;
-    radius = number2data(vars);
+  for i = 1:num
+    vars{1} = i;
+    radius = number2data(vars)
     I(:,:,i) = circle({1,width,height,ssiz,buff,radius,Background});
   end
 
+case 8 % Looming stimuli. Here, we consider a disk with constant velocity and radius 
+    %which is approaching the fish. The radius of the 2d circle plotted on the screen to
+    %simulate this will increase proportial to 1/(-time) (see equation below - 
+    %commonly found in literature for looming stimuli). 
+    %We also need to define r/v (radius/velocity - which will be constant)
+    %from user input
+    %Distance between the fish and screen is also defined above (d_screen -
+    %fixed it to 5cm but this will only affect the r/v value required to
+    %obtain some perceived velocity.
 
+    % Created by Michael Lynn 
+    
+  % Set stimulus-specific functions and variables
+  number2data = @(vars) vars{3}*vars{1}/vars{2};
+  vars = {0,num,height/2};
+  conversion = @(i,num) i+1;
+
+  % Load stimuli into matrix. Create time_array, then iterate through times, 
+  %calculating the desired radius based on and creating a new matrix to show, 
+  %encoded in the third dimension of I.
+  
+  min_radius = min_size %Minimum size of 2d circle
+  maxtime_new = 1 * rv_ratio * d_screen / (min_radius) %Apparent size of 2d circle this timestep
+  
+  interval = 1/60
+  time_array = 0:interval:maxtime_new;
+  time_array = -1 * flip(time_array);
+  
+  I = ones(height,width,length(time_array));
+
+  data_special_looming = zeros(fois, length(time_array), 2);  
+  
+  for time_ind = 1:length(time_array)
+    vars{1} = time_ind-1;
+    desired_radius = (-1 * rv_ratio * d_screen) / (time_array(time_ind));
+    data_special_looming(:, time_ind, 2) = desired_radius; %Store the desired radius in data_special_looming
+    %so that it can be referred back to.
+    
+    I(:,:,time_ind) = circle_looming({0,width,height,ssiz,buff,desired_radius, Background});
+    %sum(sum(I(:,:,time_ind)))
+  end
+  
 end 
 
 % Display blank background
@@ -203,25 +259,22 @@ if(~Execution)
   return;
 end
 
-% Outputs a 5V trigger if devices is connected
-if(Triggered)
-  outputSingleScan(s,5);
-end
-start = tic;
-pause(1);
-if(Triggered)
-  outputSingleScan(s,0);
-end
-
 % Saves stimulus configuration data
-Props(1,:) = [length(ran)/fois fois, typ, lag1, lag2, PlusMinusDifference];
-Props(2,:) = [Sign, height, width, buff,ssiz, Background];
+if(typ==8)
+    Props(1,:) = [length(ran)/fois fois, typ, lag1, lag2, PlusMinusDifference, rv_ratio];
+    Props(2,:) = [Sign, height, width, buff,ssiz, Background, min_radius];
+else 
+    Props(1,:) = [length(ran)/fois fois, typ, lag1, lag2, PlusMinusDifference];
+    Props(2,:) = [Sign, height, width, buff,ssiz, Background];
+end
 
 % Position screen
 Pos = get(gcf,'Position');
 set(gcf,'Position',Pos + [0 0 0 25]);
 
+
 % Loop through each stimulus
+
 for i = 1:length(ran)
   vars{1} = ran(i);
   data(i,1) = i;
@@ -232,10 +285,38 @@ for i = 1:length(ran)
   end
 end
 
+
+%Outputs a 5V trigger if devices is connected
+if(Triggered)
+  outputSingleScan(s,5);
+end
+ start = tic;
+pause(1);
+if(Triggered)
+  outputSingleScan(s,0);
+end
+
 % Pause 10 (1+9) seconds to set baseline
 pause(9); 
 
-if(typ == 5)  % Special presentaton for moving bars
+
+
+% Code related to looming stimuli: Change background color for 2 seconds,
+% then change back, then start timer (start = tic). This is so we can look
+% at red channel on 2P images to estimate when each stimulus started (since
+% we did not have a TTL output available for precise stimulus timing
+
+% imshow(Background, 'border','tight','Parent',gca);
+% pause(1)
+% 
+% imshow(I(:, :, length(time_array)), 'border','tight','Parent',gca);
+% pause(2)
+% 
+%imshow(Background, 'border','tight','Parent',gca);  
+%start = tic;
+
+
+if(typ == 5)  % Special presentation for moving bars
 
   for j = 1:length(ran)
     data(j,2) = toc(start);
@@ -276,29 +357,60 @@ elseif(typ == 4)  % Special Presentation for spatial frequency
     end
   end
 
-else % All other stimuli
+
+elseif(typ == 8) %Special presentation for looming. Here, num refers to the max time to present.
+  %Define time array for 60Hz stim presentation from 0 to maxtime seconds
+
+  time_array = 0:(1/60):maxtime_new;
+  time_pause = 1/60;
+
+  for sweeps = 1:fois
+      imshow(I(:, :, 1), 'border','tight','Parent',gca);
+      pause(5)
+      
+        for time_ind = 1:length(time_array)
+          data_special_looming(sweeps, time_ind, 1) = toc(start);
+          tic;
+          imshow(I(:, :, time_ind), 'border','tight','Parent',gca);
+
+          %sum(sum(I(:, :, time_ind)))
+          time_topause = max(time_pause-toc,0);
+          pause(time_topause);
+        end
+      imshow(I(:, :, length(time_array)), 'border','tight','Parent',gca);
+      pause(5)
+      imshow(Background, 'border','tight','Parent',gca)
+      pause(3)
+  end
+
+else    % All other stimuli
 
   for i = 1:length(ran)
     data(i,2) = toc(start);
+    % Presentation background as control
     if(ran(i) == 0)
       pause(lag1);
       data(i,3) = 0;
     else
-      set(hImage,'CData',(I(:,:,conversion(ran(i),num)))); % Show stimulus and convert stimulus number into matrix index
+      % Show stimulus and convert stimulus number into matrix index
+      set(hImage,'CData',I(:,:,conversion(ran(i),num))); 
       pause(lag1);
     end
-    tic;
     set(hImage,'CData',Background*White);
     pause(lag2);
   end
 
 end
 
-disp('StimulusTimes: ');
-disp(data);
-disp('StimulusConfig: ');
-disp(Props);
-
+if(typ == 8)
+    disp('StimulusTimes: ');
+    disp(data_special_looming);
+else
+    disp('StimulusTimes: ');
+    disp(data);
+    disp('StimulusConfig: ');
+    disp(Props);
+end
 
 %% Saves Data as StimulusTimes.txt and properties as StimulusConfig.txt
 
@@ -306,22 +418,32 @@ file = fullfile(handles.folder,'StimulusTimes.txt');
 file2 = fullfile(handles.folder,'StimulusConfig.txt');
 
 i = 2;
+
 while(exist(file))
   file = fullfile(handles.folder,['StimulusTimes(' int2str(i) ').txt']);
   file2 = fullfile(handles.folder,['StimulusConfig(' int2str(i) ').txt']);
   i = i + 1;
 end
 
-dlmwrite(file,data,'precision','%.3f');
+%Added condition to write 'data_special_looming' (with additional
+%time-vs-radius information) to file, instead of 'data', if the looming
+%stimulus is activated.
+if(typ == 8)
+    dlmwrite(file,data_special_looming,'precision','%.3f'); 
+else
+    dlmwrite(file,data,'precision','%.3f');
+end
+
+size(data)
+
 dlmwrite(file2,Props,'precision','%.3f');
 
 
 
 %% --- Random ordering of {0,1,....,num*fois}
-function ran = randomOrder(num,fois,d,typ)
+function ran = randomOrder(num, fois,d,typ)
 
 ran = datasample(repmat([0:num],[1 fois]),(num+1)*fois,'Replace',false);
 ran = transpose(ran);
-
 
 

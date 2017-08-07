@@ -151,7 +151,13 @@ function pushbutton1_Callback(hObject, eventdata, handles, file)
 	handles.RoiData = RoiData;
 	handles.header = header;
 	handles.StimulusData = StimulusData;
-	handles.Responses = StimulusData.Responses;
+	try
+		handles.Responses = StimulusData.Responses;
+	catch
+		for r = 1:length(RoiData)
+			handles.Responses(r,:) = mean(RoiData(r).XCor');
+		end
+	end
 	handles = createWorkspace(hObject, eventdata, handles);
 
 	% Shows where stimuli occur on time slider
@@ -205,7 +211,7 @@ function pushbutton1_Callback(hObject, eventdata, handles, file)
 	[RC TC] = size(handles.AnalysedData.dFF0);
 
 	for i = 1:RC
-		handles.cc(i,:) = repmat(handles.AnalysedData.Responsive(i),[1 TC]);
+		handles.cc(i,:) = repmat(max(handles.AnalysedData.ZScore(i),[],2),[1 TC]);
 		handles.RFmu(i,:) = handles.RoiData(i).RFmu;
 	end
 
@@ -235,6 +241,7 @@ function listbox1_Callback(hObject, eventdata, handles)
 	nowslice = get(handles.listbox1,'value') - 1;
 	t = handles.CurrentTime;
 	handles.CurrentRoi = 0;
+	nowROI = 0;
 
 	% Updates which slice is selected.
 	handles.CurrentSlice = nowslice;
@@ -299,7 +306,8 @@ function listbox2_Callback(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 	% Gets the roi, slice, and time that is currently selected.
-	nowROI = get(handles.listbox2,'value') - 1;
+	% nowROI = get(handles.listbox2,'value') - 1;
+	nowROI = handles.CurrentRoi;
 	nowslice = handles.CurrentSlice;
 	t = ceil(get(handles.slider1,'Value'));
 
@@ -347,7 +355,7 @@ function listbox2_Callback(hObject, eventdata, handles)
 				getRFMap(n,handles.RoiData,handles.StimulusData.Configuration);
 				ax = gca;
 			elseif(handles.StimulusData.Configuration.Type == 5)
-				R = [handles.AnalysedData.pValues(n,end) handles.AnalysedData.pValues(n,:)];
+				R = [handles.AnalysedData.ZScore(n,end) handles.AnalysedData.ZScore(n,:)];
 				Theta = sort(uniqueElements(handles.StimulusData.Raw(:,3)))*pi/180;
 				scatter(cos(Theta).*(1-R),sin(Theta).*(1-R),50,max(0,0.1-R),'filled'); hold on;
 				plot(cos(Theta).*(1-R),sin(Theta).*(1-R)); hold off;
@@ -359,15 +367,14 @@ function listbox2_Callback(hObject, eventdata, handles)
 				xlim([-1.1 1.1])
 				axis square
 			else
-				bar(1-handles.AnalysedData.pValues(n,:));
+				bar(handles.AnalysedData.ZScore(n,:));
 			end
 		else		
-			YMAX = 20*median(handles.AnalysedData.dFF0(n,:));
-			bar(handles.StimulusData.Times,YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05);
+			bar(handles.StimulusData.Times,0.2*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05);
 			hold on;
-			bar(handles.StimulusData.Times,-YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05,'r');
+			% bar(handles.StimulusData.Times,-YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05,'r');
 			% plot(handles.AnalysedData.Times(n,:),((handles.AnalysedData.dFF0(n,:)-mean(handles.AnalysedData.dFF0(n,:)))/std(handles.AnalysedData.dFF0(n,:))));
-			plot(handles.AnalysedData.Times(n,:),((handles.AnalysedData.dFF0(n,:))));
+			plot(handles.AnalysedData.Times(n,:),Smooth(((handles.AnalysedData.dFF0(n,:))),[-ceil(handles.header.FPS) ceil(handles.header.FPS)]));
 			hold off;
 			xlabel('Time');
 			ylabel('dF/F0');
@@ -612,11 +619,27 @@ end
 
 txt = ['(' num2str(pos(1)) ', ' num2str(pos(2)) ',' num2str(pos(3)) ')'];
 
-for i = 1:length(handles.RoiData)
-	if(sum(round(handles.RoiData(i).Coordinates,0) == round(transpose(pos),0)) == 3)
-		CC = round(handles.RoiData(i).Coordinates,1);
-		txt = ['Roi ' int2str(i)];
-		break;
+try
+	S = handles.AnalysedData.RoiCoords(3,:) == pos(3);
+	T = find(S);
+	for i = 1:sum(S)
+		for p = 1:length(handles.header.RoiMask{pos(3)}{i,1});
+			if(min(max(handles.header.RoiMask{pos(3)}{i,2}(p),1),512) == pos(2) && min(max(handles.header.RoiMask{pos(3)}{i,1}(p),1),512) == pos(1))
+				I = i + T(1) -1;
+				txt = ['Roi ' int2str(I)];
+				CC = pos;
+				break;
+			end
+		end
+	end
+	i = I;
+catch
+	for i = 1:length(handles.RoiData)
+		if(sum(round(handles.RoiData(i).Coordinates,0) == round(transpose(pos),0)) == 3)
+			CC = round(handles.RoiData(i).Coordinates,1);
+			txt = ['Roi ' int2str(i)];
+			break;
+		end
 	end
 end
 
@@ -626,7 +649,7 @@ handles.listbox2.set('Value',n);
 
 n = i;
 
-txt = {['Roi ' int2str(i)], ['(' num2str(CC(1)) ',' num2str(CC(2)) ',' num2str(CC(3)) ')']};
+txt = {['Roi ' int2str(i)], ['(' num2str(pos(1)) ', ' num2str(pos(2)) ',' num2str(pos(3)) ')']};
 
 
 figHandles = get(0,'Children');
@@ -647,28 +670,27 @@ if(handles.toggleValue == 2 || handles.toggleValue == 3)
 		colorbar;
 		ax = gca;
 	elseif(handles.StimulusData.Configuration.Type == 5)
-		R = max((1-[handles.AnalysedData.pValues(n,end) handles.AnalysedData.pValues(n,:)])-0.9,0)/0.1;
+		R = [handles.AnalysedData.ZScore(n,end) handles.AnalysedData.ZScore(n,:)];
 		Theta = sort(uniqueElements(handles.StimulusData.Raw(:,3)))*pi/180;
 		scatter(cos(Theta).*(R),sin(Theta).*(R),50,'filled'); hold on;
 		plot(cos(Theta).*(R),sin(Theta).*(R)); hold off;
 		set(gca,'XAxisLocation','origin')
 		set(gca,'YAxisLocation','origin')
-		set(gca,'XTick',[-1 -0.5 0 0.5 1]);
-		set(gca,'YTick',[-1 -0.5 0 0.5 1]);
-		set(gca,'XTickLabel',{1, 0.95,'', 0.95 1})
-		set(gca,'YTickLabel',{1, 0.95, '', 0.95 1})
-		ylim([-1.1 1.1])
-		xlim([-1.1 1.1])
+		% set(gca,'XTick',[-5 -2.5 0 2.5 5]);
+		% set(gca,'YTick',[-1 -2.5 0 2.5 5]);
+		% set(gca,'XTickLabel',{5, 2.5,'', 2.5 5})
+		% set(gca,'YTickLabel',{5, 2.5, '', 2.5 5})
+		ylim([-10 10]);
+		xlim([-10 10]);
 		axis square
 	else
-		bar(1-handles.AnalysedData.pValues(n,:))
+		bar(handles.AnalysedData.ZScore(n,:))
 	end
 else		
-	YMAX = 20*median(handles.AnalysedData.dFF0(n,:));
-	bar(handles.StimulusData.Times,YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05);
+	bar(handles.StimulusData.Times,0.2*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05);
 	hold on;
-	bar(handles.StimulusData.Times,-YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05,'r');
-	plot(handles.AnalysedData.Times(n,:),((handles.AnalysedData.dFF0(n,:)-mean(handles.AnalysedData.dFF0(n,:)))/std(handles.AnalysedData.dFF0(n,:))));
+	% bar(handles.StimulusData.Times,-YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05,'r');
+	plot(handles.AnalysedData.Times(n,:),Smooth(((handles.AnalysedData.dFF0(n,:))),[-ceil(handles.header.FPS) ceil(handles.header.FPS)]));
 	hold off;
 	xlabel('Time');
 	ylabel('dF/F0');
@@ -700,10 +722,13 @@ if(handles.CurrentSlice == 0)
 	end
 else
 	roinum = sum(handles.RoiCount(1:handles.CurrentSlice-1));
+	disp(handles.CurrentRoi);
 
 	for i = 1:handles.RoiCount(handles.CurrentSlice)
 		if(c(t,roinum+i) > 0)
 			data = [data; {['ROI ', int2str(roinum +i)]}];
+		elseif(i == handles.CurrentRoi)
+			handles.CurrentRoi = 0;
 		end
 	end
 end

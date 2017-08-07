@@ -47,7 +47,7 @@ function header = extractData(Folder, ImageData)
       end
 
       [header1 ImageData] = getTimeSeries(Folder);
-      header = analyseTimeSeries(header1, ImageData);
+      % header = analyseTimeSeries(header1, ImageData);
 
     case 2  % Analyse data from ImageData
       header = analyseTimeSeries(Folder, ImageData);
@@ -97,6 +97,8 @@ function [header ImageData] = getTimeSeries(Folder)
 
   % Get projected Images for each slice
   [Average_Images tform] = zProjReg(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
+
+  save(fullfile(Folder,'tform.mat'), 'tform', 'Average_Images');
   
   header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', ...
     ImagesPerSlice, 'fps', fps,'FlyBackFrames',FlyBackFrames,'ImageWidth',ImageWidth, ...
@@ -114,11 +116,8 @@ function [header ImageData] = getTimeSeries(Folder)
     % Get the Roi Manager 
     K = plugin.frame.RoiManager.getRoiManager;
 
-    % Could be improved \/
-
     % Image analysis
     IJ.run('Subtract Background...', 'rolling=7 stack');
-    imp = WindowManager.getCurrentImage;
     imp.setProcessor( inra.ijpb.morphology.Morphology.whiteTopHat( getChannelProcessor(imp), inra.ijpb.morphology.strel.DiskStrel.fromRadius(6) ) );
     IJ.run('Enhance Contrast', 'saturated=0.35');
     IJ.setAutoThreshold(imp,'MinError dark');
@@ -136,26 +135,28 @@ function [header ImageData] = getTimeSeries(Folder)
     end
     A = zeros(ImageHeight,ImageWidth,length(rois));
     RoiCoordinates = zeros(3,length(rois));
+    RoiPoints = {};
     for r = 1:length(rois)
       roi = rois(r);
       points = roi.getContainedPoints;
       Coords = zeros(length(points),3);
       for p = 1:length(points)
         Coords(p,:) = [points(p).x points(p).y Slice];
-        A(points(p).y+1,points(p).x+1,r) = 1;
       end
       RoiCoordinates(:,r) = mean(Coords,1)';
+      RoiPoints{r,1} = Coords(:,1);
+      RoiPoints{r,2} = Coords(:,2);
     end
 
-    ImageData(Slice) = struct('Slice', Slice, 'Results', [], 'NumOfROIs',size(A,3),'Average', ...
-      Average_Images(:,:,Slice),'RoiCoordinates',RoiCoordinates,'RoiMask',A);
+    ImageData(Slice) = struct('Slice', Slice, 'Results', [], 'NumOfROIs',length(rois),'Average', ...
+      Average_Images(:,:,Slice),'RoiCoordinates',RoiCoordinates,'tform',[],'RoiMask',[]);
+
+    ImageData(Slice).RoiMask = RoiPoints;
+
+    ImageData(Slice).tform = {tform{Slice,:}};
 
     IJ.run('Close All');
     % delete(fullfile(Folder,['Slice' int2str(Slice) '.tif']));
-  end
-
-  for Slice = 1:StepCount
-    ImageData(Slice).tform = tform{Slice,:};
   end
 
   % Measures average pixel value for each ROI
@@ -164,7 +165,6 @@ function [header ImageData] = getTimeSeries(Folder)
   % Save measurements for each ROI
   for Slice = 1:StepCount
     ImageData(Slice).Results = Results{Slice};
-    ImageData(Slice).RoiMask = sum(ImageData(Slice).RoiMask,3);
   end  
 
   save(fullfile(Folder,fileName), 'header', 'ImageData','-v7.3');
@@ -203,7 +203,7 @@ function header = analyseTimeSeries(header, ImageData)
   % Normalize data with percent above baseline
   tau0 = 0.2;   % Denoising parameter
   AvgFrame = 7; % Number of frames before and after point for average
-  BaseLineCount = ceil(Config.RestLength*header.fps);  % Number of data points for baseline
+  BaseLineCount = ceil(3*(Config.RestLength+Config.DisplayLength)*header.fps);  % Number of data points for baseline
   difF = deltaF_overF(RoiData,tau0, AvgFrame, BaseLineCount);
 
   % Get time axis for each ROI time series
@@ -213,6 +213,10 @@ function header = analyseTimeSeries(header, ImageData)
   RawStimulusData(:,2) = RawStimulusData(:,2) + frameTime(1);
   StimulusTimes = RawStimulusData(:,2);
 
+  for i = 1:length(ImageData)
+    RoiMask{i} = ImageData(i).RoiMask;
+  end
+
   % Save data in structures
   AnalysedData = struct('dFF0', difF,'Times', FrameTimes,'RoiCoords',RoiCoordinates);
   StimulusData = struct('Raw',RawStimulusData,'Times',StimulusTimes,'Configuration',Config);
@@ -220,7 +224,7 @@ function header = analyseTimeSeries(header, ImageData)
     length(StimulusTimes),'TimeLapse', TimeLapse, 'FPS', header.fps, 'Frames', ...
     header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight', ...
     header.ImageHeight, 'fieldSize',header.fieldSize, 'zScale',header.zScale, 'zStart',header.zStart, ...
-    'FlyBackFrames', header.FlyBackFrames);
+    'FlyBackFrames', header.FlyBackFrames,'RoiMask',{RoiMask});
 
   % Calculate ROI responses to stimuli
   getXCor;
@@ -232,7 +236,7 @@ function header = analyseTimeSeries(header, ImageData)
   save(datafile, 'header','AnalysedData','StimulusData','RoiData');
 
   % Save data in Excel
-  saveDataXLS;
+  % saveDataXLS;
 
   % PlotRoiData(header.FileName);
 

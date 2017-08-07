@@ -24,27 +24,15 @@ for i = 1:length(RoiData)
 	% Raw data for each ROI, 1 by FrameCount matrix
 	Trace = RoiData(i).Brightness;
 
-	waitbar(i/(length(RoiData)),h);
+	av = Smooth(Trace,[-AvgFrame, AvgFrame]);
 
 	for j = 1:length(Trace)
-
-		% Smooths data with averaging
-		av(1:AvgFrame) = inf;
-		av(j) = mean(Trace(max(j-AvgFrame,1):min(j+AvgFrame,length(Trace))));
-
-		% Finds baseline from previous BLThresh frames
-		F0(1:AvgFrame) = inf;
 		F0(j) = min(av(max(j-BLThresh,1):j));
-
-		% Normalizes data to percent above baseline
-		R(:,1:AvgFrame) = 0;
-		R(j) = (Trace(j)-F0(j))/F0(j);
-
-		% Uses moving exponentially-weighted averaging to denoise
-		R(j) = denoise(R,j,N,tau0);
-
-
 	end
+	
+	R = (Trace'-F0)./F0;
+
+	waitbar(i/(length(RoiData)),h);
 
 	D(i,:) = R;
 

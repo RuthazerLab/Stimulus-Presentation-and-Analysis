@@ -1,4 +1,5 @@
 function R = whiteness_test(x,m)
+	% Auto-correlation
 	N = length(x);
 	x = (x-repmat(mean(x),[1 N]))/std(x);
 	rsq = 0;

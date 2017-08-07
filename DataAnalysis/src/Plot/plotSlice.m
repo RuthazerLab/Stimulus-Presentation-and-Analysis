@@ -59,6 +59,18 @@ else
 	y = y(S);
 	z = z(S);
 	c = c(:,S);
+	try
+		A = zeros(512,512);
+		for i = 1:sum(S)
+			for p = 1:length(handles.header.RoiMask{nowslice}{i,1});
+				A(min(max(handles.header.RoiMask{nowslice}{i,2}(p),1),512),min(max(handles.header.RoiMask{nowslice}{i,1}(p),1),512)) = c(t,i);
+			end
+		end
+		imagesc(A);
+		return;
+	catch
+		% disp('No ROiMask');
+	end
 end
 
 % figure(1);
@@ -72,7 +84,7 @@ if(length(c(t,:)) > 0)
 		x(end+1) = x(end); y(end+1) = y(end); c(t,end+1) = c(t,end);
 	end
 	if(Single_Roi)
-		scatter(X(n),Y(n),100,CC,'filled','d');
+		scatter(X(n),Y(n),100,CC,'filled','d'); hold on;
 	end
 	scatter(x,y,50,c(t,:),'filled'); hold on;
 	
@@ -91,31 +103,8 @@ if(handles.toggleValue == 1 || handles.toggleValue == 3)
 end
 
 hold off;
-set(gca,'CLim',[0 5]);
+set(gca,'CLim',[0 0.25]);
 axis([0 handles.header.ImageWidth 0 handles.header.ImageHeight]); axis ij;
-
-try
-	% xlabel = get(gca,'XTickLabel');
-	% ylabel = get(gca,'YTickLabel');
-	% for i = 1:length(xlabel)
-	% 	newxlabel{i} = round(str2num(xlabel{i})*handles.header.fieldSize/512);
-	% 	newylabel{i} = round(str2num(ylabel{i})*handles.header.fieldSize/512);
-	% end
-	% set(gca,'XTickLabel',newxlabel);
-	% set(gca,'YTickLabel',newylabel);
-	% axis ij;
-catch
-	
-end
-
-if(Single_Roi || handles.toggleValue ~= 2 && handles.toggleValue ~= 3)
-
-	% set(gca,'Color',[0.05 0.05 0.05]);
-	% colormap gray;
-
-else
-	colormap parula;
-end
 
 if(handles.toggleValue == 1)
 	set(gca,'CLim',[0.99 1]);

@@ -22,6 +22,7 @@ if(StepCount == 1)
 	FlyBackFrames = 0;
 end
 
+% Generate circle in top right corner
 for i = 1:512
 	for j = 1:512
 		if((i-45)^2+(j-450)^2<=34^2)
@@ -32,13 +33,14 @@ for i = 1:512
 	end
 end
 
+% Convert times to frame number
 T = time2Frame(StimulusData.Raw(:,2),AnalysedData);
-
 
 fid = fopen(fullfile(Folder,'Image_0001_0001.raw'),'r','l');
 
 filename = [];
 
+% Video writer boiler plate
 for i = 1:StepCount
 	if(StepCount == 1)
 		filename{i} = ['Experiment.avi'];
@@ -67,7 +69,7 @@ for ii = 1:FrameCount
     	b = 1;
     end
 
-    
+    % Skip fly-back frames
     if(sum(b == [1:StepCount]) == 0 || mod(a+1,Skipped_Frames) == 0)
       fseek(fid,ImageWidth*ImageHeight*2,0);
       continue;
@@ -78,6 +80,7 @@ for ii = 1:FrameCount
 
 	I = get8BitImage(fid,ImageHeight,ImageWidth);
 
+	% Add circle to image with appropriate shading
 	if(sum(Frame==T)>0)
 		I = I + suint8(J).*(StimulusData.Raw(find(Frame==T),3)/max(StimulusData.Raw(:,3)));
 	end

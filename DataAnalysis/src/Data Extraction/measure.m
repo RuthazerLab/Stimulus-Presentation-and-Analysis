@@ -26,10 +26,14 @@ function Results = measure(fileName, header, ImageData, tform)
       T = tform{Slice,inc};
       A = ImageData(Slice).RoiMask;
       for k = 1:RoiCount(Slice)
-        [a b] = mdivide(find(A(:,:,k)'),ImageHeight);
-        Coords = [a b];
-        TCoords = round(transformPointsInverse(T,Coords));
-        RoiMask{Slice,k} = min(max(TCoords(:,1)*ImageHeight+TCoords(:,2),1),ImageHeight*ImageWidth);
+        for p = 1:length(A{k,1});
+          a(p) = min(max(round(A{k,2}(p)),1),ImageHeight);
+          b(p) = min(max(round(A{k,1}(p)),1),ImageWidth);
+        end
+        Coords = [a' b'];
+        TCoords = min(max(round(transformPointsInverse(T,Coords)),1),ImageWidth);
+        RoiMask{Slice,k} = min(max((TCoords(:,1)-1)*ImageHeight+TCoords(:,2),1),ImageHeight*ImageWidth);
+        % RoiMask{Slice,k} = min(max((Coords(:,1)-1)*ImageHeight+Coords(:,2),1),ImageHeight*ImageWidth);
       end
     end
 

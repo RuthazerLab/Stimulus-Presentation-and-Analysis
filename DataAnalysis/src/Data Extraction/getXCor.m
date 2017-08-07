@@ -3,34 +3,37 @@ T = [time2Frame(StimulusData.Times,AnalysedData) StimulusData.Raw(:,3)];
 stimType  = sort(uniqueElements(StimulusData.Raw(:,3)));
 stimCount = length(stimType);
 
+
 critWindow = ceil(header.FPS*2);
 
-for i = 1:stimCount
-	temp = T(find(T(:,2) == stimType(i)),1);
+for index1 = 1:stimCount
+	temp = T(find(T(:,2) == stimType(index1)),1);
 	reps = length(temp);
-	for j = 1:reps
-		for k = 1:critWindow
-			S(i,critWindow*(j-1)+k) = temp(j) + k;
+	for index2 = 1:reps
+		for index3 = 1:critWindow
+			S(index1,critWindow*(index2-1)+index3) = temp(index2) +index3;
 		end
 	end
 end
 
 for r = 1:RoiCount
-	for i = 1:stimCount
-		for j = 1:reps
-			if(r == 1 && S(i,critWindow*j) > size(AnalysedData.dFF0,2))
-				disp(['Stimulus ' int2str(i) 'x' int2str(j) ' has no image data']);
+	for index1 = 1:stimCount
+		for index2 = 1:reps
+			if(r == 1 && S(index1,critWindow*index2) > size(AnalysedData.dFF0,2))
+				disp(['Stimulus ' int2str(index1) 'x' int2str(index2) ' has no image data']);
 			else
-				mu(i,j) = mean(AnalysedData.dFF0(r,S(i,critWindow*(j-1)+1:critWindow*j)));
+				mu(index1,index2) = mean(AnalysedData.dFF0(r,S(index1,critWindow*(index2-1)+1:critWindow*index2)));
 			end
 		end
 	end
+
 	RoiData(r).XCor = mu;
-	StimulusData.Responses(:,r) = mean(mu');
-	for j = 2:(StimulusData.Configuration.StimuliCount)
-		[h p(r,j-1) ci stats] = ttest2(RoiData(r).XCor(1,find(RoiData(r).XCor(1,:))),RoiData(r).XCor(j,find(RoiData(r).XCor(j,:))),'tail','left');
+	AnalysedData.Responses(r,:) = mean(RoiData(r).XCor');
+
+	Mu = mean(RoiData(r).XCor');
+	STD = std(RoiData(r).XCor');
+
+	for index2 = 2:StimulusData.Configuration.StimuliCount
+		AnalysedData.ZScore(r,index2-1) = (Mu(index2)-Mu(1))/sqrt(STD(index2)^2/10+STD(1)^2/10);
 	end
 end
-
-AnalysedData.pValues = p;
-AnalysedData.Responsive = 1 - min(AnalysedData.pValues');
