@@ -31,13 +31,13 @@ end
 
 
 
-height  = handles.height;   % Height of image
-width = handles.width;      % Width of image
-buff = handles.buffer;      % Offset from bottom of screen
-ssiz = handles.ssiz;        % Size of display area
+height  = handles.height;       % Height of image
+width = handles.width;          % Width of image
+buff = handles.buffer;          % Offset from bottom of screen
+ssiz = handles.ssiz;            % Size of display area
 radius = handles.circleRadius;  % Radius of a circle
-lag1 = handles.lag1;        % Length of stimulus
-lag2 = handles.lag2;        % Length of pause
+lag1 = handles.lag1;            % Length of stimulus
+lag2 = handles.lag2;            % Length of pause
 
 Background = handles.Background;
 PlusMinusDifference = handles.Contrast;
@@ -121,7 +121,7 @@ case 4  % Spatial Frequency
   % number2data = @(vars) vars{1};
   conversion = @(i,num) i;
 
-  % I = zeros(height,width,num*4); J = zeros(height,width,num*4);
+  % I = zeros(height,width,num*4); J = zeros(height,width,num*  4);
   % for theta = 45:45:180
   %   [temp1 temp2] = SpatialFrequencyAngled(theta,height,width);
   %   I(:,:,end+1:end+1+size(temp1,3)) = temp1;
@@ -152,7 +152,7 @@ case 5 % Displays bar in specified direction and width
   White = White(:,:,1);
   Background = 1;
   
-  num = 360/num;ini
+  num = 360/num;
 
 
 case 6 % Orientation Selectivity
@@ -190,12 +190,12 @@ case 7 % Radii
   % Set stimulus-specific functions and variables
   number2data = @(vars) vars{3}*vars{1}/vars{2};
   vars = {0,num,height/2};
-  conversion = @(i,num) i+1;
+  conversion = @(i,num) i;
   Background = 0;
 
   % Load stimuli into matrix
-  for i = 1:num+1
-    vars{1} = i-1;
+  for i = 1:num
+    vars{1} = i;
     radius = number2data(vars)
     I(:,:,i) = circle({1,width,height,ssiz,buff,radius,Background});
   end
@@ -259,16 +259,6 @@ if(~Execution)
   return;
 end
 
-%Outputs a 5V trigger if devices is connected
-if(Triggered)
-  outputSingleScan(s,5);
-end
- start = tic;
-pause(1);
-if(Triggered)
-  outputSingleScan(s,0);
-end
-
 % Saves stimulus configuration data
 if(typ==8)
     Props(1,:) = [length(ran)/fois fois, typ, lag1, lag2, PlusMinusDifference, rv_ratio];
@@ -293,6 +283,17 @@ for i = 1:length(ran)
   else
     data(i,3) = number2data(vars);  % Convert stimulus number into discriptive number
   end
+end
+
+
+%Outputs a 5V trigger if devices is connected
+if(Triggered)
+  outputSingleScan(s,5);
+end
+ start = tic;
+pause(1);
+if(Triggered)
+  outputSingleScan(s,0);
 end
 
 % Pause 10 (1+9) seconds to set baseline
@@ -391,13 +392,12 @@ else    % All other stimuli
       pause(lag1);
       data(i,3) = 0;
     else
-      tic;
-      imshow(I(:,:,conversion(ran(i),num)),'border','tight','Parent',gca); % Show stimulus and convert stimulus number into matrix index
-      pause(max(lag1-toc,0)); % Accounts for image presentation time in lag 
+      % Show stimulus and convert stimulus number into matrix index
+      set(hImage,'CData',I(:,:,conversion(ran(i),num))); 
+      pause(lag1);
     end
-    tic;
-    imshow(Background*White,'border','tight','Parent',gca);
-    pause(max(lag2-toc,0)); % Accounts for image presentation time in lag 
+    set(hImage,'CData',Background*White);
+    pause(lag2);
   end
 
 end

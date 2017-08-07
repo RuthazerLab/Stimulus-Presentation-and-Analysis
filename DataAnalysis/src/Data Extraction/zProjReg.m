@@ -64,11 +64,11 @@ for Slice = 1:StepCount
 		waitbar((i+(Slice-1)*TSegs)/(StepCount*TSegs),h,[int2str(i+(Slice-1)*TSegs) '/' int2str(StepCount*TSegs)]);
 
 		% Register image and find transformation
-		K(:,:,i) = imregister(I(:,:,i),I(:,:,1),'rigid',optimizer,metric);
-		tform{Slice,i} = imregtform(I(:,:,i),I(:,:,1),'rigid',optimizer,metric);
+		K(:,:,i) = imregister(I(:,:,i),I(:,:,TSegs/2),'translation',optimizer,metric);
+		tform{Slice,i} = imregtform(I(:,:,i),I(:,:,TSegs/2),'translation',optimizer,metric);
 
 		if(i>1)
-			Err(i-1) = sum(sum((I(:,:,i)-I(:,:,i-1)).^2))/ImageSize;
+			Err(i-1) = sum(sum((K(:,:,i)-K(:,:,i-1)).^2))/ImageSize;
 		end
 		if(i>2)
 			Diffs(i-2) = Err(i-1)-Err(i-2);

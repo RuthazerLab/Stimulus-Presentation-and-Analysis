@@ -12,10 +12,14 @@ J = zeros(BigL,BigL+W);
 I = [];
 K = [];
 
-for i = 1:round((BigL)/W)+1
-	for j = 1:W
-		J(:,W*(i-1)+j) = j/W;
-	end
+% for i = 1:round((BigL)/W)+1
+% 	for j = 1:W
+% 		J(:,W*(i-1)+j) = j/W;
+% 	end
+% end
+
+for j = 1:BigL+W
+	J(:,j) = repmat(0.5+0.5*sin(j*2*pi/W),[BigL 1]);
 end
 
 for i = 1:W

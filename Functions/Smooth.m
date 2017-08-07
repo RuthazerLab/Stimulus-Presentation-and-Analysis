@@ -1,5 +1,7 @@
 function V_Smoothed = Smooth(V, Range);
 
+% Smooths vector with moving-average with window defined by Range
+
 	Low = Range(1); High = Range(2);
 
 	V_Smoothed = zeros(1,length(V));
