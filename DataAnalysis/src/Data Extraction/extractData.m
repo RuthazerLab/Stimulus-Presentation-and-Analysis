@@ -1,16 +1,26 @@
-function header = extractData(Folder, ImageData)
+function header = extractData(Folder, ImageData, Register)
 
-% header = extractData3(Folder)
+% header = extractData(Folder)
 %   Takes experiment folder and outputs analysed image data
-% 
+%   By default Register = 1
+% header = extractData(header,ImageData)
+%   Takes data.mat header and ImageData and analyzes it
+% header = extractData(Folder,[],Register)
+%   Takes experiment folder register 1 or 0. If Register = 1,
+%   then the images are registered. Otherwise, there is no 
+%   registration
+%   
 % 
 
   try
 
     switch nargin
 
-    case {0,1}  % Analyse raw data
+    case {0,1,3}  % Analyse raw data
 
+      if(nargin == 1 || 0)
+        Register = 1;
+      end
       if(nargin == 0)
         Folder = uigetdir('Data Folder');
       end
@@ -43,11 +53,17 @@ function header = extractData(Folder, ImageData)
       end
 
       if(abort)
-        return;
+        [a b] = fileparts(Folder);
+        if(length(findstr(b,'darkness')))
+          [header1 ImageData] = getTimeSeries(Folder,Register);
+          header = darknessAnalyse(header1,ImageData);
+        else
+          return;
+        end
+      else
+        [header1 ImageData] = getTimeSeries(Folder,Register);
+        header = analyseTimeSeries(header1, ImageData);
       end
-
-      [header1 ImageData] = getTimeSeries(Folder);
-      % header = analyseTimeSeries(header1, ImageData);
 
     case 2  % Analyse data from ImageData
       header = analyseTimeSeries(Folder, ImageData);
@@ -62,7 +78,7 @@ function header = extractData(Folder, ImageData)
 
 end
 
-function [header ImageData] = getTimeSeries(Folder)
+function [header ImageData] = getTimeSeries(Folder,Register)
 
   % Get Folder name, save data with name 
   [Path ExperimentName] = fileparts(Folder);
@@ -96,7 +112,7 @@ function [header ImageData] = getTimeSeries(Folder)
 
 
   % Get projected Images for each slice
-  [Average_Images tform] = zProjReg(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames);
+  [Average_Images tform] = zProjReg(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames,Register);
 
   save(fullfile(Folder,'tform.mat'), 'tform', 'Average_Images');
   
@@ -153,7 +169,11 @@ function [header ImageData] = getTimeSeries(Folder)
 
     ImageData(Slice).RoiMask = RoiPoints;
 
-    ImageData(Slice).tform = {tform{Slice,:}};
+    if(~iscell(tform))
+      ImageData(Slice).tform = 0;
+    else
+      ImageData(Slice).tform = {tform{Slice,:}};
+    end
 
     IJ.run('Close All');
     % delete(fullfile(Folder,['Slice' int2str(Slice) '.tif']));
@@ -167,7 +187,12 @@ function [header ImageData] = getTimeSeries(Folder)
     ImageData(Slice).Results = Results{Slice};
   end  
 
-  save(fullfile(Folder,fileName), 'header', 'ImageData','-v7.3');
+  if(~iscell(tform))
+    header.FileName = [ExperimentName '-noReg.mat'];
+    save(fullfile(Folder,[ExperimentName '-noReg.mat']), 'header', 'ImageData','-v7.3');
+  else
+    save(fullfile(Folder,fileName), 'header', 'ImageData','-v7.3');
+  end
 
 end
 
@@ -239,5 +264,35 @@ function header = analyseTimeSeries(header, ImageData)
   % saveDataXLS;
 
   % PlotRoiData(header.FileName);
+
+end
+
+function header = darknessAnalyse(header,ImageData)
+  Folder = header.DataPath;
+  filename = header.FileName;
+  datafile = fullfile(Folder,['Analysed ' filename]);
+
+   % Reorient data to ROI-oriented structure
+  [RoiData RoiCoordinates] = getRoiData(ImageData);
+
+
+  % Normalize data with percent above baseline
+  tau0 = 0.2;   % Denoising parameter
+  AvgFrame = 7; % Number of frames before and after point for average
+  BaseLineCount = ceil(15*header.fps);  % Number of data points for baseline
+  difF = deltaF_overF(RoiData,tau0, AvgFrame, BaseLineCount);
+
+  for i = 1:length(ImageData)
+    RoiMask{i} = ImageData(i).RoiMask;
+  end
+
+  % Save data in structures
+  AnalysedData = struct('dFF0', difF,'RoiCoords',RoiCoordinates);
+  header = struct('FileName',['Analysed ' filename], 'RoiCount', length(RoiData),'FPS', header.fps, 'Frames', ...
+    header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight', ...
+    header.ImageHeight, 'fieldSize',header.fieldSize, 'zScale',header.zScale, 'zStart',header.zStart, ...
+    'FlyBackFrames', header.FlyBackFrames,'RoiMask',{RoiMask});
+
+  save(datafile, 'header','AnalysedData','RoiData');
 
 end

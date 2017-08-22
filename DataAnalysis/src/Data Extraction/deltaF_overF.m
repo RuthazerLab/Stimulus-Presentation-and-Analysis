@@ -38,6 +38,11 @@ for i = 1:length(RoiData)
 
 end
 
+if(sum(isnan(D)) > 0)
+	frame = find(isnan(D(1,:)));
+	disp(['Error: Data has 0 brightness at frame ' num2str(frame)]);
+end
+
 delete(h);
 
 function G = denoise(R,t,N,tau0)

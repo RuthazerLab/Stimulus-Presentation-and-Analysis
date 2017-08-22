@@ -33,7 +33,7 @@ for r = 1:RoiCount
 	Mu = mean(RoiData(r).XCor');
 	STD = std(RoiData(r).XCor');
 
-	for index2 = 2:StimulusData.Configuration.StimuliCount
-		AnalysedData.ZScore(r,index2-1) = (Mu(index2)-Mu(1))/sqrt(STD(index2)^2/10+STD(1)^2/10);
+	for index2 = 2:stimCount
+		AnalysedData.ZScore(r,index2-1) = (Mu(index2)-Mu(1))/sqrt(STD(index2)^2/reps+STD(1)^2/reps);
 	end
 end

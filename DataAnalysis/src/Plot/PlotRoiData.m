@@ -306,8 +306,8 @@ function listbox2_Callback(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 	% Gets the roi, slice, and time that is currently selected.
-	% nowROI = get(handles.listbox2,'value') - 1;
-	nowROI = handles.CurrentRoi;
+	nowROI = get(handles.listbox2,'value') - 1;
+	% nowROI = handles.CurrentRoi;
 	nowslice = handles.CurrentSlice;
 	t = ceil(get(handles.slider1,'Value'));
 
@@ -370,7 +370,7 @@ function listbox2_Callback(hObject, eventdata, handles)
 				bar(handles.AnalysedData.ZScore(n,:));
 			end
 		else		
-			bar(handles.StimulusData.Times,0.2*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05);
+			bar(handles.StimulusData.Times,0.05*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05);
 			hold on;
 			% bar(handles.StimulusData.Times,-YMAX/5*handles.StimulusData.Raw(:,3)/max(handles.StimulusData.Raw(:,3)),0.05,'r');
 			% plot(handles.AnalysedData.Times(n,:),((handles.AnalysedData.dFF0(n,:)-mean(handles.AnalysedData.dFF0(n,:)))/std(handles.AnalysedData.dFF0(n,:))));
