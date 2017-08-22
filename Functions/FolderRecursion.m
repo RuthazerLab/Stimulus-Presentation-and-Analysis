@@ -11,9 +11,11 @@ if(length(D) > 2)
 	end
 end
 
-try
+[a b] = fileparts(Folder);
+
+if(exist(fullfile(Folder,['Analysed ' b '.mat'])) & ~exist(fullfile(Folder,['Analysed ' b '-noReg.mat']))) 
 	func(Folder);
 	disp(['Ran function on ' Folder]);
-catch
-	disp(['Can''t run function on ' Folder]);
+else
+	% disp(['Can''t run function on ' Folder]);
 end

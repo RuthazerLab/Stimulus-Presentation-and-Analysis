@@ -1,4 +1,4 @@
-function BuildVideo(Folder,StimulusData,AnalysedData,FrameRate)
+function BuildVideo(Folder,FrameRate)
 
 % BuildVideo(Folder,StimulusData,AnalysedData,FrameRate)
 % 	Folder: Experiment folder
@@ -6,6 +6,9 @@ function BuildVideo(Folder,StimulusData,AnalysedData,FrameRate)
 % 
 % 	Saves video as 'Experiment.avi'
 
+[a b] = fileparts(Folder);
+
+load(fullfile(Folder,['Analysed ' b '.mat']));
 
 % Extract experiment data from Experiment.xml file
 MetaData    	= xml2struct(fullfile(Folder,'Experiment.xml'));
@@ -35,6 +38,13 @@ end
 
 % Convert times to frame number
 T = time2Frame(StimulusData.Raw(:,2),AnalysedData);
+for i = 1:24
+	T = [T T(:,1)+i];
+end
+U = uniqueElements(StimulusData.Raw(:,3));
+for i = 1:length(U)
+	S(i,:) = find(StimulusData.Raw(:,3) == U(i));
+end
 
 fid = fopen(fullfile(Folder,'Image_0001_0001.raw'),'r','l');
 
@@ -55,11 +65,11 @@ for i = 1:StepCount
 	vobj{i}.FrameRate=FrameRate;
 	vobj{i}.Quality=75;
 	open(vobj{i});
+	V{i} = uint8(zeros(512,512,length(U),25));
 end
 
 
 h = waitbar(1/(FrameCount),['1/' int2str(FrameCount)], 'Name','Building');
-
 
 for ii = 1:FrameCount
 
@@ -81,13 +91,25 @@ for ii = 1:FrameCount
 	I = get8BitImage(fid,ImageHeight,ImageWidth);
 
 	% Add circle to image with appropriate shading
-	if(sum(Frame==T)>0)
-		I = I + suint8(J).*(StimulusData.Raw(find(Frame==T),3)/max(StimulusData.Raw(:,3)));
+	if(sum(sum(Frame==T))>0)
+		[a postframe] = find(Frame == T);
+		[stimtyp d] = find(S == a);
+		V{Slice}(:,:,stimtyp,postframe) = V{Slice}(:,:,stimtyp,postframe) + I;
 	end
-	
-	writeVideo(vobj{Slice}, I);
 		
 	waitbar(ii/(FrameCount),h,[int2str(ii) '/' int2str(FrameCount)]);
+end
+
+S = sort(U);
+
+for Slice = 1:4
+	I = V{Slice};
+	for i = 1:length(U)
+		F = find(U(i) == S);
+		for j = 1:25
+			writeVideo(vobj{Slice},suint8(I(:,:,F,j))+suint8(J).*uint8(length(U)/length(U)*(j == 1)));
+		end
+	end
 end
 
 delete(h);

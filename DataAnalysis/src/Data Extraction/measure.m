@@ -15,7 +15,12 @@ function Results = measure(fileName, header, ImageData, tform)
     RoiCount(Slice) = ImageData(Slice).NumOfROIs;
   end
 
-  [slicecount TSegs] = size(tform);
+
+  if(~iscell(tform))
+    TSegs = 20;
+  else
+    [slicecount TSegs] = size(tform);
+  end
 
   h = waitbar(1/(Frames*(Step+FlyBackFrames)),['1/' int2str(TSegs)], 'Name','Measuring');
 
@@ -23,7 +28,6 @@ function Results = measure(fileName, header, ImageData, tform)
 
     % Calculate ROI pixels in registered images
     for Slice = 1:Step
-      T = tform{Slice,inc};
       A = ImageData(Slice).RoiMask;
       for k = 1:RoiCount(Slice)
         for p = 1:length(A{k,1});
@@ -31,9 +35,13 @@ function Results = measure(fileName, header, ImageData, tform)
           b(p) = min(max(round(A{k,1}(p)),1),ImageWidth);
         end
         Coords = [a' b'];
-        TCoords = min(max(round(transformPointsInverse(T,Coords)),1),ImageWidth);
-        RoiMask{Slice,k} = min(max((TCoords(:,1)-1)*ImageHeight+TCoords(:,2),1),ImageHeight*ImageWidth);
-        % RoiMask{Slice,k} = min(max((Coords(:,1)-1)*ImageHeight+Coords(:,2),1),ImageHeight*ImageWidth);
+        if(~iscell(tform))
+          RoiMask{Slice,k} = min(max((Coords(:,1)-1)*ImageHeight+Coords(:,2),1),ImageHeight*ImageWidth);
+        else
+          T = tform{Slice,inc};
+          TCoords = min(max(round(transformPointsInverse(T,Coords)),1),ImageWidth);
+          RoiMask{Slice,k} = min(max((TCoords(:,1)-1)*ImageHeight+TCoords(:,2),1),ImageHeight*ImageWidth);
+        end
       end
     end
 
