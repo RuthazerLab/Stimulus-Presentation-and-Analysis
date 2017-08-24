@@ -13,9 +13,9 @@ end
 
 [a b] = fileparts(Folder);
 
-if(exist(fullfile(Folder,['Analysed ' b '.mat'])) & ~exist(fullfile(Folder,['Analysed ' b '-noReg.mat']))) 
+try
 	func(Folder);
 	disp(['Ran function on ' Folder]);
-else
+catch
 	% disp(['Can''t run function on ' Folder]);
 end
