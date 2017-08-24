@@ -10,7 +10,7 @@ R = corrcoef(AnalysedData.dFF0(:,100:end)');
 S = AnalysedData.RoiCoords(3,:) == Slice;
 T = find(S);
 
-header.RoiMask{Slice} = getRoiMask(Folder,Slice);
+% header.RoiMask{Slice} = getRoiMask(Folder,Slice);
 
 
 A = zeros(512,512);

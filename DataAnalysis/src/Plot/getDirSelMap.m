@@ -1,4 +1,4 @@
-function A = getDirSelMap(Folder)
+function getDirSelMap(Folder)
 
 [a FishName] = fileparts(Folder);
 
