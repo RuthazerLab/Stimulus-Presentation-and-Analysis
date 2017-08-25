@@ -18,6 +18,7 @@ function header = extractData(Folder, ImageData, Register)
 
     case {0,1,3}  % Analyse raw data
 
+      % Register the images. Otherwise determiend by Register
       if(nargin == 1 || 0)
         Register = 1;
       end
@@ -54,6 +55,8 @@ function header = extractData(Folder, ImageData, Register)
 
       if(abort)
         [a b] = fileparts(Folder);
+
+        % If darkness experiment, ignore lack of stimulus data
         if(length(findstr(b,'darkness')))
           [header1 ImageData] = getTimeSeries(Folder,Register);
           header = darknessAnalyse(header1,ImageData);
@@ -61,7 +64,9 @@ function header = extractData(Folder, ImageData, Register)
           return;
         end
       else
+        % Extract data from images
         [header1 ImageData] = getTimeSeries(Folder,Register);
+        % Analyse extracted data
         header = analyseTimeSeries(header1, ImageData);
       end
 
@@ -111,9 +116,10 @@ function [header ImageData] = getTimeSeries(Folder,Register)
   ImagesPerSlice = FrameCount / (StepCount + FlyBackFrames);
 
 
-  % Get projected Images for each slice
+  % Get projected Images for each slice. tform is 0 if no registration takes place
   [Average_Images tform] = zProjReg(fullfile(Folder,'Image_0001_0001.raw'),ImagesPerSlice,ImageWidth*ImageHeight,StepCount,FlyBackFrames,Register);
 
+  % Save tform data
   save(fullfile(Folder,'tform.mat'), 'tform', 'Average_Images');
   
   header = struct('FileName', fileName, 'DataPath',Folder, 'Slices', StepCount, 'Frames', ...
@@ -123,7 +129,7 @@ function [header ImageData] = getTimeSeries(Folder,Register)
   % Loop through each slice
   for Slice = 1:StepCount
    
-    % Get ROIs and initialize their respective rectangular regions
+    % Save .tifs and open them with ImageJ
     ImageName = fullfile(Folder,['Slice' int2str(Slice) '.tif']);
     imwrite(suint16(Average_Images(:,:,Slice)),ImageName,'tif');
     IJ.run('Open...', ['path=[' ImageName ']']);
@@ -144,6 +150,7 @@ function [header ImageData] = getTimeSeries(Folder,Register)
     IJ.run('Analyze Particles...', 'clear add stack');
     IJ.run('Set Measurements...', 'mean redirect=None decimal=3');
 
+    % Extract ROI coordinates
     rois = K.getRoisAsArray;
     if(length(rois) == 0)
       ME = MException('MATLAB:actionNotTaken','No ROIs detected!');
@@ -169,6 +176,7 @@ function [header ImageData] = getTimeSeries(Folder,Register)
 
     ImageData(Slice).RoiMask = RoiPoints;
 
+    % Save tforms if no registration
     if(~iscell(tform))
       ImageData(Slice).tform = 0;
     else
@@ -187,12 +195,15 @@ function [header ImageData] = getTimeSeries(Folder,Register)
     ImageData(Slice).Results = Results{Slice};
   end  
 
+  % Saves data differently depending on registeration
   if(~iscell(tform))
     header.FileName = [ExperimentName '-noReg.mat'];
     save(fullfile(Folder,[ExperimentName '-noReg.mat']), 'header', 'ImageData','-v7.3');
   else
     save(fullfile(Folder,fileName), 'header', 'ImageData','-v7.3');
   end
+
+  delete(fullfile(Folder,'tform.mat'));
 
 end
 
@@ -251,7 +262,7 @@ function header = analyseTimeSeries(header, ImageData)
     header.ImageHeight, 'fieldSize',header.fieldSize, 'zScale',header.zScale, 'zStart',header.zStart, ...
     'FlyBackFrames', header.FlyBackFrames,'RoiMask',{RoiMask});
 
-  % Calculate ROI responses to stimuli
+  % Calculates ROI responses and ZScores
   getXCor;
 
   % PlotRoiData-related information
@@ -259,11 +270,6 @@ function header = analyseTimeSeries(header, ImageData)
 
   % Save final analysed data
   save(datafile, 'header','AnalysedData','StimulusData','RoiData');
-
-  % Save data in Excel
-  % saveDataXLS;
-
-  % PlotRoiData(header.FileName);
 
 end
 

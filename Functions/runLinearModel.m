@@ -34,6 +34,11 @@ for i = 1:size(ZScore,3)
 		LM.Slope(j,i) = LRL.Coefficients.Estimate(2);
 		LM.RSquared(j,i) = LRL.Rsquared.Ordinary;
 	end
+	xlswrite([Stim '.' Group '.LinearRegression.xlsx'],[{'XInt'},{'Slope'},{'R^2'}; num2cell([LM.XIntercept(:,i) LM.Slope(:,i) LM.RSquared(:,i)])],['Fish ' int2str(i)]);
 end
+
+xlswrite([Stim '.' Group '.LinearRegression.xlsx'],[LM.XIntercept],['XIntercept']);
+xlswrite([Stim '.' Group '.LinearRegression.xlsx'],[LM.Slope],['Slope']);
+xlswrite([Stim '.' Group '.LinearRegression.xlsx'],[LM.RSquared],['RSquared']);
 
 save(fullfile(Folder,'Sampled.mat'),'RoiMin','ZScore','Responses','SI','LM');
