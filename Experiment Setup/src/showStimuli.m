@@ -121,12 +121,6 @@ case 4  % Spatial Frequency
   % number2data = @(vars) vars{1};
   conversion = @(i,num) i;
 
-  % I = zeros(height,width,num*4); J = zeros(height,width,num*  4);
-  % for theta = 45:45:180
-  %   [temp1 temp2] = SpatialFrequencyAngled(theta,height,width);
-  %   I(:,:,end+1:end+1+size(temp1,3)) = temp1;
-  %   J(:,:,end+1:end+1+size(temp2,3)) = temp2;
-  % end
   [I J] = SpatialFrequencyAngled(0,height,width);
 
   Hz = 5;
@@ -286,11 +280,11 @@ for i = 1:length(ran)
 end
 
 
-%Outputs a 5V trigger if devices is connected
+% Outputs a 5V trigger if devices is connected
 if(Triggered)
   outputSingleScan(s,5);
 end
- start = tic;
+start = tic;
 pause(1);
 if(Triggered)
   outputSingleScan(s,0);
