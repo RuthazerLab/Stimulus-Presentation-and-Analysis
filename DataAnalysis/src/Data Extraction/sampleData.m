@@ -63,6 +63,9 @@ for i = 1:length(L)
 	xlswrite([Stim '.' Group '.Fish' int2str(i) '.xlsx'],[Title; num2cell(Responses(:,:,i))],'DeltaF');
 	xlswrite([Stim '.' Group '.Fish' int2str(i) '.xlsx'],[Title(2:end); num2cell(ZScore(:,:,i))],'ZScore');
 	xlswrite([Stim '.' Group '.Fish' int2str(i) '.xlsx'],(SI(:,i)),'SI');
+	xlswrite([Stim '.' Group '.Fish' int2str(i) '.xlsx'],ROIS,'RoiNumbers');
+
+	RoiNumbers(:,i) = ROIS;
 end
 
-save(fullfile(Folder,'Sampled.mat'),'Responses','ZScore','XCor','RoiMin','SI');
+save(fullfile(Folder,'Sampled.mat'),'Responses','ZScore','XCor','RoiMin','SI','RoiNumbers');
