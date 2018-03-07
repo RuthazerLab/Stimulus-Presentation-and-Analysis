@@ -41,4 +41,4 @@ xlswrite([Stim '.' Group '.LinearRegression.xlsx'],[LM.XIntercept],['XIntercept'
 xlswrite([Stim '.' Group '.LinearRegression.xlsx'],[LM.Slope],['Slope']);
 xlswrite([Stim '.' Group '.LinearRegression.xlsx'],[LM.RSquared],['RSquared']);
 
-save(fullfile(Folder,'Sampled.mat'),'RoiMin','ZScore','Responses','SI','LM');
+save(fullfile(Folder,'Sampled.mat'),'RoiMin','ZScore','Responses','SI','LM','RoiNumbers');
