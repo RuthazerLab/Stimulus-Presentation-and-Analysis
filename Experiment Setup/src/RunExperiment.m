@@ -145,7 +145,7 @@ handles.ssiz = str2num(handles.edit11.String);
 
 % Names of the different stimulus options
 handles.listbox1.String = {'Calibrate Setup'; 'Random Squares'; 'RF Bars';
-'Brightness Levels'; 'Spatial Frequency'; 'Direction'; 'Orientation'; 'Radii'; 'Looming'};
+'Brightness Levels'; 'Spatial Frequency'; 'Direction'; 'Orientation'; 'Radii'; 'Looming';'Moving Frequency'};
 handles.text1.set('Visible','off'); handles.edit1.set('Visible','off');
 handles.text2.set('Visible','off'); handles.edit2.set('Visible','off');
 handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
@@ -298,6 +298,18 @@ case 8 % Looming
   handles.text3.set('Visible','on'); handles.edit3.set('Visible','on');
   handles.text3.set('String','radius/velocity (s)'); handles.edit3.set('String','2');
 
+case 9 % Moving Spatial Frequency
+
+  handles.edit2.set('style','edit');
+  handles.edit2.Position(3) = 7.5;
+
+  handles.text1.set('Visible','on'); handles.edit1.set('Visible','on');
+  handles.text1.set('String', 'Repititions:'); handles.edit1.set('String','10');
+  handles.text2.set('Visible','on'); handles.edit2.set('Visible','on');
+  handles.text2.set('Visible', 'off'); handles.edit2.set('Visible','off');
+  handles.text3.set('Visible','off'); handles.edit3.set('Visible','off');
+  handles.edit12.set('String','5');
+  handles.edit13.set('String','2.5');
 end
 
 
@@ -425,6 +437,12 @@ case 8    % looming
   dv = str2num(handles.edit3.String);
   variables = [fois typ num dv];
 
+case 9    % Spatial Frequency
+
+  num = length(compFact(str2num(handles.edit9.String)))-2;
+  fois = str2num(handles.edit1.String);
+  variables = [fois typ num];
+
 end
   
 guidata(hObject,handles);
@@ -542,6 +560,8 @@ function handles = updateTime(hObject, eventdata, handles)
      L = L * length(compFact(str2num(handles.edit9.String)));
   case {5,6}
     L = L * (360/str2num(handles.edit2.String{handles.edit2.Value})+1);
+  case 9
+    L = L * (8+1);
   end
 
   L = L + 10;
