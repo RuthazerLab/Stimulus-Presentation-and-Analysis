@@ -2,14 +2,15 @@ function [data shade] = showStimuli(hObject, variables, handles)
 %%% ---- Support Functions for RunExperiment.m ---- %%
 
 %Initializes trigger through National Instrument's USB-6009 port ao1
-try
-  s = daq.createSession('ni');
-  addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
-  Triggered = 1;
-catch Last_Error
-  disp(getReport(Last_Error));
-  Triggered = 0;
-end
+% try
+%   s = daq.createSession('ni');
+%   addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
+%   Triggered = 1;
+% catch Last_Error
+%   disp(getReport(Last_Error));
+%   Triggered = 0;
+% end
+Triggered = 0;
 
 
 fois = variables(1);        % Number of times stimulus is presented
@@ -148,7 +149,6 @@ case 5 % Displays bar in specified direction and width
   
   num = 360/num;
 
-
 case 6 % Orientation Selectivity
 
   number2data = @(vars) vars{1}*vars{2};
@@ -235,7 +235,40 @@ case 8 % Looming stimuli. Here, we consider a disk with constant velocity and ra
     I(:,:,time_ind) = circle_looming({0,width,height,ssiz,buff,desired_radius, Background});
     %sum(sum(I(:,:,time_ind)))
   end
+
+case 9  % Moving Spatial Frequency
+
+
+  % Bar widths (in pixels)
+  screenWidth = 11.5; % centimeters
+  barSize = [2,1,0.925,0.85,0.785,0.68,0.5,0.24]; % centimeters
+  F = ceil(barSize/screenWidth*width); % pixels
+  % F = compFact(width);
+  % F = F(1:end-4);
+  num = length(F);
+
   
+
+  vars = {1, barSize};
+  number2data = @(vars) vars{2}(vars{1});
+
+  h = waitbar(1/num,['1/' int2str(num)], 'Name','Constructing');
+  for i = 1:num
+    temp2 = PlusMinusDifference*(dirSelect(0,width,F(i))-0.5)+0.5;
+    I{i} = temp2(1:height,1:width,:);
+    waitbar(i/num,h,[int2str(i) '/' int2str(num)]);
+  end
+
+  Period = 0.1; % seconds
+
+  delete(h);
+
+  White = ones(size(I{1}(:,:,1)));
+
+  conversion = @(i,num) i;
+  set(fig,'Color',[0.5 0.5 0.5]);
+  Background = 0.5;
+
 end 
 
 % Display blank background
@@ -310,22 +343,27 @@ pause(9);
 %start = tic;
 
 
-if(typ == 5)  % Special presentation for moving bars
-
+if(typ == 5 || typ == 9)  % Special presentation for moving bars
   for j = 1:length(ran)
     data(j,2) = toc(start);
     if(ran(j) == 0)
+      set(hImage,'CData',Background*White);
       pause(lag2);
       data(j,3) = 0;
     else
       J = I{ran(j)};
-      tic;
-      for k = 0:floor(lag1)-1
-        for i = 1:size(J,3)
-            set(hImage,'CData',J(:,:,i));
-            pause(Period/size(J,3));
-        end
+      N = size(J,3);
+      totalTime = tic;
+      counter = 0;
+      while(toc(totalTime) < floor(lag1))
+          tic;
+          i = mod(counter,N)+1;
+          set(hImage,'CData',J(:,:,i));
+          counter = counter+1;
+          pauseTime = max(Period/N-toc,0);
+          pause(pauseTime);
       end
+      set(hImage,'CData',Background*White);
       pause(lag2);
     end
   end

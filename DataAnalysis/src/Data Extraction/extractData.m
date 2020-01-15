@@ -236,12 +236,6 @@ function header = analyseTimeSeries(header, ImageData)
   [RoiData RoiCoordinates] = getRoiData(ImageData);
 
 
-  % Normalize data with percent above baseline
-  tau0 = 0.2;   % Denoising parameter
-  AvgFrame = 7; % Number of frames before and after point for average
-  BaseLineCount = ceil(3*(Config.RestLength+Config.DisplayLength)*header.fps);  % Number of data points for baseline
-  difF = deltaF_overF(RoiData,tau0, AvgFrame, BaseLineCount);
-
   % Get time axis for each ROI time series
   FrameTimes = getTimeAxis(RoiData,frameTime,header.Slices,header.FlyBackFrames);
 
@@ -253,20 +247,51 @@ function header = analyseTimeSeries(header, ImageData)
     RoiMask{i} = ImageData(i).RoiMask;
   end
 
+  % Normalize data with percent above baseline
+  % tau0 = 0.2;   % Denoising parameter
+  % AvgFrame = 7; % Number of frames before and after point for average
+  % BaseLineCount = ceil(3*(Config.RestLength+Config.DisplayLength)*header.fps);  % Number of data points for baseline
+  % difF = deltaF_overF(RoiData,tau0, AvgFrame, BaseLineCount);
+
+  % Normalize data with stimulus response
+  types = unique(RawStimulusData(:,3));
+  m = size(RawStimulusData,1)/length(types);
+  X = zeros(length(RoiData),length(types),m,25);
+  for i = 1:length(RoiData)
+      y = RoiData(i).Brightness;
+      time = FrameTimes(i,:);
+      tt = interp1(time,[1:length(time)],[time(1)+1; RawStimulusData(:,2);RawStimulusData(end,2)+5; time(end)-1],'nearest');
+      for j = 1:length(tt)
+        % t = RawStimulusData(j,2);
+        it = tt(j);
+        % it = interp1(time,[1:length(time)],t,'nearest');
+        bl(j) = mean(RoiData(i).Brightness(it-3:it+3));
+      end
+      bl2 = interp1(tt,bl,[1:length(time)],'linear');
+      dFF0(i,:) = (y(:)-bl2(:))./abs(bl2(:));
+
+      counter = zeros(1,length(types));
+      for j = 1:length(RawStimulusData)
+        t = find(RawStimulusData(j,3)==types);
+        counter(t) = counter(t)+1;
+        T = interp1(time,1:length(time),RawStimulusData(j,2),'next');
+        XResponse(i,t,counter(t),:) = dFF0(i,T:T+24);
+      end
+      X = mean(XResponse,4);
+      for t = 2:length(types)
+        ZScore(i,t-1) = (mean(X(i,t,:))-mean(X(i,1,:)))/sqrt(var(X(i,t,:))/m+var(X(i,1,:))/m);
+      end
+      responses = mean(X,3);
+  end
+
   % Save data in structures
-  AnalysedData = struct('dFF0', difF,'Times', FrameTimes,'RoiCoords',RoiCoordinates);
+  AnalysedData = struct('dFF0', dFF0,'Times', FrameTimes,'RoiCoords',RoiCoordinates,'Responses',responses,'ZScore',ZScore);
   StimulusData = struct('Raw',RawStimulusData,'Times',StimulusTimes,'Configuration',Config);
   header = struct('FileName',['Analysed ' filename], 'RoiCount', length(RoiData), 'StimuliCount', ...
     length(StimulusTimes),'TimeLapse', TimeLapse, 'FPS', header.fps, 'Frames', ...
     header.Frames, 'Slices', header.Slices,'ImageWidth',header.ImageWidth,'ImageHeight', ...
     header.ImageHeight, 'fieldSize',header.fieldSize, 'zScale',header.zScale, 'zStart',header.zStart, ...
     'FlyBackFrames', header.FlyBackFrames,'RoiMask',{RoiMask});
-
-  % Calculates ROI responses and ZScores
-  getXCor;
-
-  % PlotRoiData-related information
-  getResponsive;
 
   % Save final analysed data
   save(datafile, 'header','AnalysedData','StimulusData','RoiData');
