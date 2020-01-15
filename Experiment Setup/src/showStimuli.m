@@ -2,15 +2,14 @@ function [data shade] = showStimuli(hObject, variables, handles)
 %%% ---- Support Functions for RunExperiment.m ---- %%
 
 %Initializes trigger through National Instrument's USB-6009 port ao1
-% try
-%   s = daq.createSession('ni');
-%   addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
-%   Triggered = 1;
-% catch Last_Error
-%   disp(getReport(Last_Error));
-%   Triggered = 0;
-% end
-Triggered = 0;
+try
+  s = daq.createSession('ni');
+  addAnalogOutputChannel(s,'Dev1','ao1','Voltage');
+  Triggered = 1;
+catch Last_Error
+  disp(getReport(Last_Error));
+  Triggered = 0;
+end
 
 
 fois = variables(1);        % Number of times stimulus is presented
@@ -477,5 +476,3 @@ function ran = randomOrder(num, fois,d,typ)
 
 ran = datasample(repmat([0:num],[1 fois]),(num+1)*fois,'Replace',false);
 ran = transpose(ran);
-
-
