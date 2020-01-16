@@ -256,6 +256,7 @@ function header = analyseTimeSeries(header, ImageData)
   % Normalize data with stimulus response
   types = unique(RawStimulusData(:,3));
   m = size(RawStimulusData,1)/length(types);
+  window = [7:13];
   X = zeros(length(RoiData),length(types),m,25);
   for i = 1:length(RoiData)
       y = RoiData(i).Brightness;
@@ -277,7 +278,7 @@ function header = analyseTimeSeries(header, ImageData)
         T = interp1(time,1:length(time),RawStimulusData(j,2),'next');
         XResponse(i,t,counter(t),:) = dFF0(i,T:T+24);
       end
-      X = mean(XResponse,4);
+      X = mean(XResponse(:,:,:,window),4);
       for t = 2:length(types)
         ZScore(i,t-1) = (mean(X(i,t,:))-mean(X(i,1,:)))/sqrt(var(X(i,t,:))/m+var(X(i,1,:))/m);
       end
@@ -285,7 +286,8 @@ function header = analyseTimeSeries(header, ImageData)
   end
 
   % Save data in structures
-  AnalysedData = struct('dFF0', dFF0,'Times', FrameTimes,'RoiCoords',RoiCoordinates,'Responses',responses,'ZScore',ZScore);
+  AnalysedData = struct('dFF0', dFF0,'Times', FrameTimes,'RoiCoords',RoiCoordinates,'Responses',responses, ...
+    'AllResponses',XResponse,'ZScore',ZScore);
   StimulusData = struct('Raw',RawStimulusData,'Times',StimulusTimes,'Configuration',Config);
   header = struct('FileName',['Analysed ' filename], 'RoiCount', length(RoiData), 'StimuliCount', ...
     length(StimulusTimes),'TimeLapse', TimeLapse, 'FPS', header.fps, 'Frames', ...
