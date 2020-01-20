@@ -30,17 +30,20 @@ function Results = measure(fileName, header, ImageData, tform)
     for Slice = 1:Step
       A = ImageData(Slice).RoiMask;
       for k = 1:RoiCount(Slice)
-        for p = 1:length(A{k,1});
+        N = length(A{k,1});
+        a = zeros(N,1);
+        b = zeros(N,1);
+        for p = 1:N
           a(p) = min(max(round(A{k,2}(p)),1),ImageHeight);
           b(p) = min(max(round(A{k,1}(p)),1),ImageWidth);
         end
-        Coords = [a' b'];
+        Coords = [a b];
         if(~iscell(tform))
-          RoiMask{Slice,k} = min(max((Coords(:,1)-1)*ImageHeight+Coords(:,2),1),ImageHeight*ImageWidth);
+          sliceMask(Slice).roi{k} = min(max((Coords(:,1)-1)*ImageHeight+Coords(:,2),1),ImageHeight*ImageWidth);
         else
           T = tform{Slice,inc};
           TCoords = min(max(round(transformPointsInverse(T,Coords)),1),ImageWidth);
-          RoiMask{Slice,k} = min(max((TCoords(:,1)-1)*ImageHeight+TCoords(:,2),1),ImageHeight*ImageWidth);
+          sliceMask(Slice).roi{k} = min(max((TCoords(:,1)-1)*ImageHeight+TCoords(:,2),1),ImageHeight*ImageWidth);
         end
       end
     end
@@ -65,7 +68,7 @@ function Results = measure(fileName, header, ImageData, tform)
       pixels = fread(fid,[1 ImageHeight*ImageWidth],'uint16');
 
       for k = 1:RoiCount(Slice)
-        Result(Slice).Data(Frame+1,k) = mean(pixels(RoiMask{Slice,k}));
+        Result(Slice).Data(Frame+1,k) = mean(pixels(sliceMask(Slice).roi{k}));
       end
 
     end

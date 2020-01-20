@@ -18,31 +18,33 @@ K = [];
 % 	end
 % end
 
-for j = 1:BigL+W
-	J(:,j) = repmat(0.5+0.5*sin(j*2*pi/W),[BigL 1]);
-end
+j = 1:BigL+W+1;
+J(:,j) = repmat(0.5+0.5*sin(j*2*pi/W),[BigL 1]);
 
 for i = 1:W
-	temp = imrotate(J(:,i:i+(BigL-1)),theta);
-	K(:,:,i) = temp(H+1:end-H,H+1:end-H);
+	temp = imrotate(J(:,i:i+BigL),theta);
+	K(:,:,i) = temp(H+1:end-H+1,H:end-H+1);
 end
 
-I = ones(L,L,W);
+% I = 0.5*ones(L,L,W);
 
 [a b] = size(K(:,:,1));
+I = K;
 
-if(a < L)
-	if(b < L)
-		I(1:a,1:b,:) = K;
-	else
-		I(1:a,:,:) = K(:,1:L,:);
-	end
-else
-	if(b < L)
-		I(:,1:b,:) = K(1:L,:,:);
-	else
-		I = K(1:L,1:L,:);
-	end
-end
+
+
+% if(a < L)
+% 	if(b < L)
+% 		I(1:a,1:b,:) = K;
+% 	else
+% 		I(1:a,:,:) = K(:,1:L,:);
+% 	end
+% else
+% 	if(b < L)
+% 		I(:,1:b,:) = K(1:L,:,:);
+% 	else
+% 		I = K(1:L,1:L,:);
+% 	end
+% end
 
 
