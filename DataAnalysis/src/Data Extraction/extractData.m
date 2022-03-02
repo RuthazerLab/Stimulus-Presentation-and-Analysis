@@ -84,6 +84,7 @@ function header = extractData(Folder, ImageData, Register)
 end
 
 function [header ImageData] = getTimeSeries(Folder,Register)
+  Folder = char(Folder); % To deal with some issue with running ImageJ
 
   % Get Folder name, save data with name 
   [Path ExperimentName] = fileparts(Folder);
